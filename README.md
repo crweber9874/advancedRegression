@@ -12,24 +12,13 @@ McElreath, Richard 2020. Statistical Rethinking: A Bayesian Course with Examples
 
 ## Interactive Notebook
 
-Explore the project's code and visualizations in this interactive Colab notebook:
+Please complete the form below so that I can grant you access to the interactive notebook. Please complete this in the first week of class.
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/14T-ZmtdlCWMD91seBzmeY34dOOh_fe1F?usp=sharing)   
+[Google Form](https://forms.gle/7x28XCeMneSuiqaW7) 
 
+Explore the project's code and visualizations in this interactive  notebook:
 
-
-## Feedback Form
-
-Please provide your valuable feedback on the project using this form:
-
-<iframe 
-  src="https://docs.google.com/forms/d/e/1FAIpQLScHfug24nEMw-g706PzFhKu_m3vjuOiAJvn2wDmEHb8pgpchA/viewform?embedded=true" 
-  width="640" 
-  height="689" 
-  frameborder="0" 
-  marginheight="0" 
-  marginwidth="0"
->Loading…</iframe>
+[Open In Course ](https://colab.research.google.com/drive/14T-ZmtdlCWMD91seBzmeY34dOOh_fe1F?usp=sharing) 
 
 
 ## Additional Sections (Optional)
