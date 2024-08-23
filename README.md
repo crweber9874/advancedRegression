@@ -9,3 +9,8 @@ The purpose of this course is to introduce students to advanced regression techn
 Long, J. Scott. 1997. Regression Models for Categorical and Limited Dependent Variables. Sage: New York.
 
 McElreath, Richard 2020. Statistical Rethinking: A Bayesian Course with Examples in Stan and R. Cambridge: Cambridge University Press.
+
+
+https://colab.research.google.com/drive/14T-ZmtdlCWMD91seBzmeY34dOOh_fe1F?usp=sharing
+
+<iframe src="https://docs.google.com/forms/d/e/1FAIpQLScHfug24nEMw-g706PzFhKu_m3vjuOiAJvn2wDmEHb8pgpchA/viewform?embedded=true" width="640" height="689" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
