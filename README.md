@@ -16,9 +16,9 @@ Please complete the form below so that I can grant you access to the interactive
 
 [Google Form](https://forms.gle/7x28XCeMneSuiqaW7) 
 
-Explore the project's code and visualizations in this interactive  notebook:
+Explore the project's code and visualizations in this book:
 
-[Open In Course ](https://colab.research.google.com/drive/14T-ZmtdlCWMD91seBzmeY34dOOh_fe1F?usp=sharing) 
+[Open In Course ](https://advancedregression.com) 
 
 
 ## Additional Sections (Optional)
