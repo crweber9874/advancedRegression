@@ -20,6 +20,14 @@ Explore the project's code and visualizations in this book:
 
 [Open In Course ](https://advancedregression.com) 
 
+Explore the class slides and notes:
+
+[Binary Data ](http://rpubs.com/crweber9874/1229076) 
+
+[Simulation  ](http://rpubs.com/crweber9874/1229075) 
+
+[Ordinal Data  ](http://rpubs.com/crweber9874/1229074) 
+
 
 ## Additional Sections (Optional)
 
