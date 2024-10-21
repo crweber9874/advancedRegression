@@ -28,6 +28,8 @@ Explore the class slides and notes:
 
 [Ordinal Data  ](http://rpubs.com/crweber9874/1229074) 
 
+[Nominal Data  ](https://rpubs.com/crweber9874/1234999) 
+
 
 ## Additional Sections (Optional)
 
