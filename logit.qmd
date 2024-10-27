@@ -1,0 +1,646 @@
+---
+title: "Logit Regression"
+date: "`r Sys.Date()`"
+author: "Christopher Weber"
+organization: "University of Arizona"
+email: "chrisweber@arizona.edu"
+format: 
+  revealjs:
+    css: style_pres.css
+---
+
+## Introduction to Logit Regression
+
+-   The Binomial density.
+
+$$
+f\left(k\right) = \binom{n}{k} \theta^k\left(1-\theta\right)^{n-k}
+$$ - Success or failures; 1/0; binary variables.
+
+-   A Bernoulli variable is a binary variable, observed over a series of $n$ trials, that takes on a value of 1 with probability $\theta$ and 0 with probability $1-\theta$.
+
+-   The Binomial Distribution is the associated probability density function (PDF) for the number of successes in $n$ trials.
+
+## Binomial Density and R
+
+```{r, echo=TRUE}
+rbinom(10, 1, 0.5) #  10 observations, 1 trial, 0.5 probability
+dbinom(5, 10, 0.5) # Success, Trials, Probability, the PDF
+pbinom(5, size=10, prob=.50, lower.tail=FALSE) # The CDF
+```
+
+## The Binomial PDF
+
+-   100 trials, where $\theta = 0.3$
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(plotly)
+
+# Define parameters for the binomial distribution
+size <- 100  # Number of trials we'll conduct
+prob <- 0.3  # Probability of success for each trial
+
+# Now for every value from 0:100, callculate the binomial and save as a dataframe
+
+# Calculate binomial probabilities
+x <- 0:size  # Possible number of successes
+y <- dbinom(x, size=size, prob=prob)  # Binomial PMF
+
+data = data.frame(x=x, y=y) 
+
+
+fig <- plot_ly(data, 
+               x = ~x, 
+               y = ~y, type = 'bar', 
+               marker = list(color = 'purple', opacity = 0.7),
+               text = ~paste('Successes (100:', x, '<br>Probability:', round(y, 4)),
+               hoverinfo = 'text') %>%
+  layout(
+    title = 'Binomial Distribution',
+    xaxis = list(title = 'Number of Successes', range = c(10, 70)),
+    yaxis = list(title = 'Probability'),
+    template = 'plotly_white'
+  )
+fig
+```
+
+## An Example
+
+## Public Policy
+
+-   Imagine you conduct a poll of Arizona residents about water scarcity and management in the state.
+-   1,243 respondents, 902 stated that water scarcity is a "somewhat" or "very serious" problem.
+-   Prior research has not explored this issue, so your "prior beliefs" are non-informative.
+
+## The Posterior
+
+-   $P(D|\theta)$. This is the *likelihood* of observing the data
+
+-   $P(\theta)$. This is the *prior* of of the parameter
+
+-   $P(D)$. This is the probability of the data
+
+-   $P(\theta | D)$ is the posterior **distribution**
+
+## The Likelihood (Log)
+
+-   $L(\theta) = \prod_{i=1}^{n} \theta^{y_i} (1-\theta)^{1-y_i}$
+-   $LL(\theta) = \sum_{i=1}^{n} y_i \log(\theta) + (1-y_i) \log(1-\theta)$
+
+## The Log Likelihood
+
+```{r}
+library(plotly)
+
+# Define parameters
+theta <- seq(0, 1, by = 0.01)
+
+
+# The log-likelihood function, using Bernoulli trials
+log_likelihood <- 902 * log(theta) + 341 * log(1 - theta)
+df <- data.frame(theta, log_likelihood)
+
+# Find the theta value that maximizes the log-likelihood
+max_log_likelihood_theta <- df$theta[which.max(df$log_likelihood)]
+
+min_log_likelihood_theta <- df$theta[which.min(df$log_likelihood)]
+
+# Create the plot using Plotly
+fig <- plot_ly(df, x = ~theta, y = ~log_likelihood, type = 'scatter', mode = 'lines', name = 'Log-Likelihood') %>%
+  add_segments(x = max_log_likelihood_theta, xend = max_log_likelihood_theta, 
+               y = -4000, yend = max(df$log_likelihood), 
+               line = list(color = 'red', dash = 'dash'), name = 'Maximum Log Likelihood') %>%
+  layout(
+    title = 'Log-Likelihood Function for 902 Heads and 341 Tails',
+    xaxis = list(title = 'Theta (Probability of Heads)'),
+    yaxis = list(title = 'Log-Likelihood'),
+    template = 'plotly_white'
+  )
+
+# Show the plot
+fig
+
+# Print additional information
+cat("Possible values of theta:", paste(head(theta), collapse = ", "), "...\n")
+cat("Assume we observe 902 heads, 341 tails. What's our best guess?\n\n")
+cat("The maximum value of the distribution is at theta =", max_log_likelihood_theta, "\n")
+```
+
+## The Likelihood
+
+```{r}
+library(plotly)
+
+# Define parameters
+theta <- seq(0, 1, by = 0.01)
+
+
+# The log-likelihood function, using Bernoulli trials
+likelihood <- theta^902* (1 - theta)^341
+df <- data.frame(theta, likelihood)
+
+# Find the theta value that maximizes the log-likelihood
+max_likelihood_theta <- df$theta[which.max(df$likelihood)]
+
+min_likelihood_theta <- df$theta[which.min(df$likelihood)]
+
+# Create the plot using Plotly
+fig <- plot_ly(df, x = ~theta, y = ~likelihood, type = 'scatter', mode = 'lines', name = 'Likelihood') %>%
+  add_segments(x = max_likelihood_theta, xend = max_likelihood_theta, 
+               y = 1, yend = max(df$likelihood), 
+               line = list(color = 'red', dash = 'dash'), name = 'Maximum  Likelihood') %>%
+  layout(
+    title = 'Likelihood Function for 902 Heads and 341 Tails',
+    xaxis = list(title = 'Theta (Probability of Heads)'),
+    yaxis = list(title = 'Likelihood'),
+    template = 'plotly_white'
+  )
+
+# Show the plot
+fig
+
+# Print additional information
+cat("Possible values of theta:", paste(head(theta), collapse = ", "), "...\n")
+cat("Assume we observe 902 heads, 341 tails. What's our best guess?\n\n")
+cat("The maximum value of the distribution is at theta =", max_likelihood_theta, "\n")
+```
+
+## The Likelihood
+
+-   This is the problem
+-   The computer finds the maximum, but we're dealing with exceedingly small probabilities across values of $\theta$
+-   Underflow and overflow are remedied by taking the log of the likelihood function, $LL(\theta)$
+
+## The Prior
+
+-   A noninformative prior
+
+-   Every value of $\theta$ is equally probable; a uniform density
+
+-   The uniform along the interval \[0,1\] means any value of $\theta$ on this interval is as likely as any other value
+
+## 
+
+```{r, echo=TRUE}
+grid_values <- seq(0, 1, by = 0.01)
+
+# Define the prior, likelihood
+prior <- rep(1, length(grid_values))  # All values equally probable
+
+likelihood <- dbinom(902, 1243, grid_values)  # binomial
+
+# Calculate the posterior
+posterior <- likelihood * prior
+posterior <- posterior / sum(posterior)  # p(D)
+
+data <- data.frame(grid_values = grid_values, posterior = posterior)
+
+# Calculate the 95% credible interval
+cumulative_posterior <- cumsum(posterior)
+lower_bound <- grid_values[which(cumulative_posterior >= 0.025)[1]] # find bounds
+upper_bound <- grid_values[which(cumulative_posterior >= 0.975)[1]]
+```
+
+## 
+
+```{r}
+fig <- plot_ly(data, 
+               x = ~grid_values, 
+               y = ~posterior, 
+               type = 'scatter', 
+               mode = 'lines', 
+               line = list(color = 'purple', width = 2),
+               text = ~paste('Theta:', round(grid_values, 2), '<br>Posterior:', round(posterior, 4)),
+               hoverinfo = 'text') %>%
+  add_ribbons(x = ~grid_values, ymin = 0, ymax = ~posterior, 
+              line = list(color = 'rgba(0, 0, 0, 0)'), 
+              fillcolor = 'rgba(128, 0, 128, 0.2)', 
+              name = '95% Credible Region',
+              showlegend = FALSE) %>%
+  layout(
+    title = 'Posterior Density Plot with 95% Credible Region',
+    xaxis = list(title = 'Theta (Probability of Success)'),
+    yaxis = list(title = 'Posterior Density'),
+    shapes = list(
+      list(type = 'rect', 
+           x0 = lower_bound, x1 = upper_bound, 
+           y0 = 0, y1 = max(posterior), 
+           fillcolor = 'rgba(128, 0, 128, 0.05)', 
+           line = list(color = 'rgba(128, 0, 128, 0.2)'))
+    ),
+    template = 'plotly_white'
+  )
+
+fig
+
+cat("Possible values of theta, 0 to 1:", paste(head(grid_values), collapse = ", "), "...\n")
+cat("Assume we observe 902 heads, 341 tails. What's our best guess?\n\n")
+cat("The maximum value of the distribution is at theta =", grid_values[which.max(posterior)], "\n")
+cat("The 95% credible interval is from", lower_bound, "to", upper_bound, "\n")
+```
+
+## Interpretation
+
+-   $\theta$ isn't one value, it's a distribution
+-   We can sample from that distribution
+
+```{r, echo = TRUE}
+# Sample 100 values from the posterior
+sample(grid_values, 100, prob = posterior, replace = TRUE) %>% mean()
+```
+
+-   Remember that, in practice, we should log the likelihood
+
+## The Log Likelihood
+
+$$log(p(D|\theta))=\sum_{n=1}^N[y_n log\theta+(1-y_n)log(1-\theta)] $$ $$log(p(D|\theta)) \equiv LL(\theta)$$
+
+-   Multiplication can give exceedingly large (or small) numbers
+
+-   The "unknown" parameter in these trials is $\theta$, $\hat{\theta}$, the probability of success, $p(y=1)$
+
+## The Log Likelihood
+
+-   We could use either the Bernoulli or Binomial densities
+
+-   $\hat {\theta}$ as some function of predictor variables
+
+$$\hat \theta_i=a+b_x+\epsilon$$
+
+## $\hat \theta_i=a+bx+\epsilon$
+
+-   The dependent variable is binary, scored 1 or 0, $y_{obs} \in [0,1]$
+-   The independent variable is a vector of real numbers of length $x \in \rm I\!R^{n}$
+-   Imagine: $(a+bx+\epsilon) \rightarrow \theta \rightarrow y$
+-   But: What is $\theta_i$ and how can we regress it on $x$ to retrieve a regression coefficient?
+
+## The Linear Probability Model
+
+-   What options are available?
+-   How about OLS?
+-   A linear regression, regressing $y_{obs}$ on a set of covariates
+-   The binary variable is just 0 or 1, so that it can be interpreted as a probability
+-   The **linear probability model** (Long 1997)
+
+## Problems
+
+-   Remember $y \in [0,1]$.
+-   Also recall, the sum of squared residuals associated with the difference of $\hat{y}$ and $y_{obs}$?
+-   We don't observe a probability, we observe a binary outcome
+-   There is nothing that restricts $\hat{y}<1$, or $\hat{y}>0$
+
+## Problems
+
+-   There is nothing that restricts $\hat{y}<1$, or $\hat{y}>0$
+-   The residuals are not normally distributed, nor are they constant
+-   Recall from POL 682, $e_i=y_i-\hat{y}_i$
+-   But, we know that $y_i$ may only take on two values, 0 or 1
+
+## Heteroskedasticity
+
+-   But, we know that $y_i$ may only take on two values, 0 or 1
+-   When $y=1$, the residual becomes: $1-b_0-b_1x$
+-   But if $y=0$, the residual becomes $-b_0-b_1x$
+-   We will always have a different variance estimate when $y=0$ relative to when $y=1$ (Long 1997, p. 38)
+
+## Heteroskedasticity
+
+$$var(y|x)=pr(y=1|x)(1-pr(y=1|x))=xb(1-xb)$$
+
+## Functional Form
+
+-   Functional form. The linear model assumes a constant effect of $x\rightarrow y$
+
+-   This may be unlikely, particularly when dealing with a probability. Maybe we expect the effect of $x$ on $y$ to be non-linear, where the effect of $x$ on $y$ is not constant
+
+-   The linear model assumes a constant effect of $x\rightarrow y$\
+    $$
+    \frac{\partial y}{\partial x} = b
+    $$
+
+## Alternative Specification
+
+```{r}
+library(plotly)
+
+# Define the data points
+x <- c(-500:500) / 100
+logistic_cdf <- plogis(x)
+normal_cdf <- pnorm(x)
+logistic_pdf <- dlogis(x)
+normal_pdf <- dnorm(x)
+
+# Create subplots
+fig <- subplot(
+  plot_ly() %>%
+    add_lines(x = ~x, y = ~logistic_cdf, name = 'Logistic CDF', 
+              line = list(width = 4), 
+              text = ~paste('x:', round(x, 2), '<br>Logistic CDF:', round(logistic_cdf, 4)),
+              hoverinfo = 'text') %>%
+    add_lines(x = ~x, y = ~normal_cdf, name = 'Normal CDF', 
+              line = list(width = 2, dash = 'dash'), 
+              text = ~paste('x:', round(x, 2), '<br>Normal CDF:', round(normal_cdf, 4)),
+              hoverinfo = 'text') %>%
+    add_lines(x = ~x, y = rep(0.5, length(x)), name = 'y = 0.5', 
+              line = list(color = 'black', dash = 'dash')) %>%
+    layout(
+      title = 'CDFs',
+      xaxis = list(title = 'x'),
+      yaxis = list(title = 'CDF', range = c(0, 1)),
+      shapes = list(
+        list(type = 'rect', 
+             x0 = min(x), x1 = max(x), 
+             y0 = 0.5, y1 = 1, 
+             fillcolor = 'rgba(128, 128, 128, 0.2)', 
+             line = list(color = 'rgba(128, 128, 128, 0.2)')),
+        list(type = 'rect', 
+             x0 = min(x), x1 = max(x), 
+             y0 = 0, y1 = 0.5, 
+             fillcolor = 'rgba(255, 255, 255, 0.2)', 
+             line = list(color = 'rgba(255, 255, 255, 0.2)'))
+      ),
+      annotations = list(
+        list(x = mean(x), y = 0.75, text = 'Observe 1', showarrow = FALSE, font = list(size = 12)),
+        list(x = mean(x), y = 0.25, text = 'Observe 0', showarrow = FALSE, font = list(size = 12))
+      ),
+      showlegend = FALSE
+    ),
+  plot_ly() %>%
+    add_lines(x = ~x, y = ~logistic_pdf, name = 'Logistic PDF', 
+              line = list(width = 4, color = 'blue'), 
+              text = ~paste('x:', round(x, 2), '<br>Logistic PDF:', round(logistic_pdf, 4)),
+              hoverinfo = 'text') %>%
+    add_lines(x = ~x, y = ~normal_pdf, name = 'Normal PDF', 
+              line = list(width = 2, dash = 'dash', color = 'red'), 
+              text = ~paste('x:', round(x, 2), '<br>Normal PDF:', round(normal_pdf, 4)),
+              hoverinfo = 'text') %>%
+    layout(
+      title = 'PDFs',
+      xaxis = list(title = 'x'),
+      yaxis = list(title = 'PDF'),
+      showlegend = TRUE
+    ),
+  nrows = 2, shareX = TRUE
+)
+
+# Show the plot
+fig
+```
+
+## Alternative Specificiation
+
+$$ x_{obs} \rightarrow y_{latent} \rightarrow y_{obs} $$
+
+-   If we knew $y_{latent}$, all would be good and we could estimate OLS
+
+-   Instead, we observe a realization of $y_{latent}$ in $y_{obs}$
+
+## Goals
+
+-   We'd like to estimate $y_{latent}=x_iB+e_i$
+
+-   We can't, so the **errors are unknown**
+
+-   What residuals can we minimize?
+
+-   Instead, let's make an assumption about the error process, either the errors
+
+-   $e_i \sim normal(0, 1)$ is the **probit** regression model
+
+-   $e_i \sim logistic(0, \pi^2/3)$ is the **logit** regression model
+
+-   And, Sigmoid $=$ logistic
+
+## Probit
+
+$$probit={{1}\over{\sqrt{2 \pi}}}exp({-{t^2}\over {2}})$$
+
+$$probit=\int_{-\infty}^{e}{{1}\over{\sqrt{2 \pi}}}exp({-{t^2}\over {2}})dt$$
+
+## Logit
+
+$$logit(e)={{exp(e)}\over{1+exp(e)^2}}$$
+
+$$logit(e)={{exp(e)}\over{1+exp(e)}}$$
+
+## 
+
+```{r}
+library(plotly)
+
+# Define the data points
+x <- c(-500:500) / 100
+logistic_cdf <- plogis(x)
+normal_cdf <- pnorm(x)
+logistic_pdf <- dlogis(x)
+normal_pdf <- dnorm(x)
+
+# Create subplots
+fig <- subplot(
+  plot_ly() %>%
+    add_lines(x = ~x, y = ~logistic_cdf, name = 'Logistic CDF', 
+              line = list(width = 4), 
+              text = ~paste('x:', round(x, 2), '<br>Logistic CDF:', round(logistic_cdf, 4)),
+              hoverinfo = 'text') %>%
+    add_lines(x = ~x, y = ~normal_cdf, name = 'Normal CDF', 
+              line = list(width = 2, dash = 'dash'), 
+              text = ~paste('x:', round(x, 2), '<br>Normal CDF:', round(normal_cdf, 4)),
+              hoverinfo = 'text') %>%
+    add_lines(x = ~x, y = rep(0.5, length(x)), name = 'y = 0.5', 
+              line = list(color = 'black', dash = 'dash')) %>%
+    layout(
+      title = 'CDFs',
+      xaxis = list(title = 'x'),
+      yaxis = list(title = 'CDF', range = c(0, 1)),
+      shapes = list(
+        list(type = 'rect', 
+             x0 = min(x), x1 = max(x), 
+             y0 = 0.5, y1 = 1, 
+             fillcolor = 'rgba(128, 128, 128, 0.2)', 
+             line = list(color = 'rgba(128, 128, 128, 0.2)')),
+        list(type = 'rect', 
+             x0 = min(x), x1 = max(x), 
+             y0 = 0, y1 = 0.5, 
+             fillcolor = 'rgba(255, 255, 255, 0.2)', 
+             line = list(color = 'rgba(255, 255, 255, 0.2)'))
+      ),
+      annotations = list(
+        list(x = mean(x), y = 0.75, text = 'Observe 1', showarrow = FALSE, font = list(size = 12)),
+        list(x = mean(x), y = 0.25, text = 'Observe 0', showarrow = FALSE, font = list(size = 12))
+      ),
+      showlegend = FALSE
+    ),
+  plot_ly() %>%
+    add_lines(x = ~x, y = ~logistic_pdf, name = 'Logistic PDF', 
+              line = list(width = 4, color = 'blue'), 
+              text = ~paste('x:', round(x, 2), '<br>Logistic PDF:', round(logistic_pdf, 4)),
+              hoverinfo = 'text') %>%
+    add_lines(x = ~x, y = ~normal_pdf, name = 'Normal PDF', 
+              line = list(width = 2, dash = 'dash', color = 'red'), 
+              text = ~paste('x:', round(x, 2), '<br>Normal PDF:', round(normal_pdf, 4)),
+              hoverinfo = 'text') %>%
+    layout(
+      title = 'PDFs',
+      xaxis = list(title = 'x'),
+      yaxis = list(title = 'PDF'),
+      showlegend = TRUE
+    ),
+  nrows = 2, shareX = TRUE
+)
+
+# Show the plot
+fig
+```
+
+## The Latent Variable Model
+
+-   The choice -- logit or probit -- is somewhat arbitrary
+
+-   Returning to the example
+
+$\bullet$ The mean of the error for the latent variable $e$ is 0
+
+$\bullet$ $\tau$ is 0
+
+$\bullet$ The variance of the error term is constant
+
+## The Latent Variable Model
+
+If
+
+$$p(y_{obs}=1|x)=p(y_{latent}>0|x)$$
+
+then,
+
+$$p(x\beta+\epsilon|x>0|x)=p(\epsilon<-x\beta|x)$$
+
+Because the distribution for $e$ must be symmetric
+
+$$p(x\beta+\epsilon>0|x>0|x)=p(\epsilon>-x\beta|x)=p(\epsilon<x\beta|x)$$
+
+## Scale Indeterminacy
+
+-   $y_{latent}$ is unobserved, we need to make an assumption about the scale of the error term.
+
+-   This is the scale indeterminacy problem. What we choose, will affect the parameter estimates.
+
+-   Logit coefficients will differ from probit coefficients, with the same data.
+
+........by a factor of 1.81
+
+$$1.81 \times \beta_{probit}=\beta_{logit}$$
+
+## 
+
+```{r, echo = TRUE}
+load("~/Dropbox/github_repos/teaching/POL683_Fall24/advancedRegression/vignettes/dataActive.rda")
+dat = dataActive %>% 
+  mutate(
+    support_protest = ifelse(violent >3, 1, 0)
+  ) %>%
+  select(support_protest, VIOLENT)
+# Estimate logit
+logitModel = glm(support_protest ~ VIOLENT, data = dat, family = binomial(link = "logit")) 
+# Estimate probit
+probitModel = glm(support_protest ~ VIOLENT, data = dat, family = binomial(link = "probit")) 
+```
+
+## 
+
+```{r}
+summary(logitModel) %>% print()
+```
+
+## 
+
+```{r}
+summary(probitModel) %>% print()
+```
+
+## Identical Predictions
+
+```{r, echo = TRUE}
+# Create a dataset
+pred.data = expand.grid(VIOLENT = c(0, 1)) %>% as.data.frame()
+
+predictions_logit = predict(logitModel, pred.data,  type = "response") %>% 
+  data.frame() %>%
+  mutate(
+    violent = c(0, 1)
+  ) 
+
+predictions_probit = predict(probitModel, pred.data,  type = "response") %>% 
+  data.frame() %>%
+  mutate(
+    violent = c(0, 1)
+  ) 
+
+
+# The difference
+cat("The treatment effect for the logit model is:\n",
+predictions_logit[1,1] - predictions_logit[2,1], "\n",
+"The treatment effect for the probit model is:\n",
+predictions_probit[1,1] - predictions_probit[2,1]
+
+)
+```
+
+## Nonlinear Regression
+
+-   A different approach to the same probolem, a binary dependent variable.
+-   The log log likelihood
+
+$$  log(p(D|\theta))=\sum_{n=1}^Nlogp(y_n|\theta)=\sum_{n=1}^N[y_n log\theta+(1-y_n)log(1-\theta)] $$
+
+-   If $\theta$ is bound between 0 and 1. But our regression model requires a continuous depenendent variable,
+
+-   First, convert the probability to an odds
+
+$${{\theta_i}\over{1-\theta_i}}$$
+
+-   **This frees the upper bound restriction.**
+
+## Nonlinear Regression
+
+-   Then the lower bounds
+
+-   The transformation is an "odds" that may approach $\infty$. But, we still have the zero restriction
+
+-   Take the natural logarithm of the odds, resulting in the **log odds**, and the logit transformation
+
+$$\eta_i=log[{{\theta_i)}\over{1-\theta_i}}]$$
+
+$$\eta \in [-\infty, \infty]$$
+
+## Nonlinear Regression
+
+$$log{{x\beta}\over{1-(x\beta)}}$$
+
+The inverse of this function,is the probability scale.
+
+$$p(y=1|x)={{exp(x\beta)}\over{1+exp(x\beta)}}$$
+
+$$p(y=1|x\beta)=\theta_i={1\over{1+exp(-(x\beta))}}$$
+
+## Nonlinear Regression
+
+-   We generated a function that maps the linear prediction onto the probability that $y=1$.
+-   We have linked the prediction formed by $a+bx$ to a probability.
+-   Knowing this, we can simply input $\theta_i$ onto the likelihood function.
+
+$$p(D|\theta)=\prod_{n=1}^N[\frac{1}{1+exp(-(x\beta))}]^{y_n}[1-\frac{1}{1+exp(-(x\beta)}]^{1-{y_n}}$$
+
+## 
+
+```{r, echo = TRUE}
+load("~/Dropbox/github_repos/teaching/POL683_Fall24/advancedRegression/vignettes/dataActive.rda")
+dat = dataActive %>% mutate( support_protest = ifelse(violent >3, 1, 0)) %>%
+  select(support_protest, VIOLENT)
+# Estimate logit
+logitModel = glm(support_protest ~ VIOLENT, data = dat, 
+                 family = binomial(link = "logit")) 
+logitModel
+```
+

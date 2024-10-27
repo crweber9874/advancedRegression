@@ -1,0 +1,497 @@
+---
+title: "Extending the Binary Model: Ordered Logit and Probit"
+date: "`r Sys.Date()`"
+author: "Christopher Weber"
+organization: "University of Arizona"
+email: "chrisweber@arizona.edu"
+format: 
+  revealjs:
+    css: style_pres.css
+title-block-banner: "#378DBD"  # Custom background color
+---
+
+## Comments On Model Fit and Interpretation
+
+- These notes track the assigned reading in Long (1997) on model fit, interpetation, and the ordered regression model
+
+- The problem with the categorical models we've explored is that they are not directly interpretable, due to the non-linearity of the effect of $x$ on $y$
+
+-   The partial derivatives with respect to $x$, ${{\partial F(x)} \over {\partial x}}=f(x)$:
+
+$${{\partial F(x)}\over{\partial x}}=b \times f(x)$$
+
+## Non Linearity
+
+-   In this case, f(x) is either the logit or probit PDF.
+
+$${{\partial F_{logit}(x)}\over{\partial x}}=b \times {{exp(a+bx)}\over{1+exp(a+bx)^2}}$$
+
+-   *For probit, just replace f(x) with the normal PDF*
+
+## Non Additivity
+
+-   It is even more challenging to interpret the results when there are other covariates, since:
+
+$${{\partial F_{logit}(x)}\over{\partial x_k}}=b_k \times {{exp(a+\sum b_j x_j)}\over{1+exp(a+\sum b_j x_j)^2}}$$
+
+-   Partial derivative for the latent variable?
+
+-   This is ill-advised: The coefficients depend on the scale of the error term
+
+## Standardize?
+
+-   We could partially standardized the slopes, by dividing each slope by the standard deviation of $y$, ($b/s_y)$
+
+-   Now the interpretation is, "for a one unit change in x we anticipate a b standard deviation change in $y_{latent}$"
+
+-   What does $y_{latent}$ mean in practice?
+
+
+## Is it a Linear Model?
+
+-   Recall the logit model is:
+
+$${log{{\theta_i}\over{1-\theta_i}}}=x_iB$$
+
+-   Every coefficient in the model represents the expected log change in the odds for a unit change in $x$.
+
+-   Unlike an OLS model, the coefficients in the logit (or probit) are not directly interpretable.
+
+-   The problem more or less boils down to something relatively simple: **The model is non-additive and non-linear.**
+
+## Model Fit
+
+-   Model fit is an important, though difficult, topic when we are dealing with non-linear models
+
+-   We derive scalar measures of model fit from the linear model, like, $R^2$
+
+-   It's hard to find a comparably reliable statistic for non-linear models
+
+-   We never observe $y_{latent}$ directly
+
+-   What is **"percent variance explained"** on an unobserved scale?
+
+## Model Fit and Maximum Likelihood
+
+## Counts correctly predicted
+
+-   A matrix which is the predicted value of $y_{obs}$ and the actual value of $y$
+
+-   In this 2x2 matrix, the 1,1 and 0,0 entries represent accurate predictions
+
+-   The off-diagonals are inaccurate predictions
+
+## Counts correctly predicted
+
+-   Generate predictions for when the predicted latent variable is positive ($y=1$) or negative ($y=0$).
+
+-   Then, calculate the **percent correctly predicted**
+
+-   If we convert these to probabilities by using the inverse normal or logit ($\texttt{pnorm}$ or $\texttt{logit}$), then define the $ePCP$, expected correctly predicted as:
+
+$$ePCP={1\over n}({\sum_{y=1} P_i+\sum_{y=0}(1-P_i)})$$
+
+## Chance
+
+-   **Percent Correctly Predicted** is a good starting point
+
+-   $pr(Y=1) = 0.55$ 
+
+-   versus,  $pr(Y=1) = 0.91$ 
+
+-   We may be more confident in the latter
+
+-   Weight each prediction by its constituent probability
+
+-   We are accounting for our uncertainty. Typically, this number is somewhat lower than PCP
+
+## Reduction in Error
+
+-   **Assume we estimate two models**
+-   A naive model and a model with the expected predictor
+-   The naive model predicts the outcome based on the modal category
+-   *If 51% voted for the Republican, the model would predict a Republican vote with probability of 0.51. We should never really get less than 0.51 -- if we do, then the naive model would be a superior model.*
+
+## Chance
+
+```{r, echo = TRUE}
+library(dplyr)
+library(MASS)
+library(pscl)
+load("~/Dropbox/github_repos/teaching/POL683_Fall24/advancedRegression/vignettes/dataActive.rda")
+dat = dataActive %>% 
+  mutate(
+    pid = recode(pid3, "Democrat" = 1, "Independent" = 2, "Republican" = 3, "Other" = 2, "Not sure" = 2),
+    protest = ifelse(violent > 4, 1, 0)
+  ) 
+my_model =  glm(protest ~ as.factor(pid),
+       family=binomial(link="logit"), data = dat)
+hitmiss(my_model)
+```
+
+## Interpretation
+
+-   If we were to just estimate $\theta$, that value would be the same as $\texttt{plogis(a)}$ from a regression model with no predictors
+
+-   The naive model is one that just assumes a single underlying $\theta$, instead of $\theta$ being some linear composite of predictors. Then, we may construct a comparison
+
+$$PRE={{PCP-PMC}\over {1-PMC}}$$
+
+-   PRE is simply the proportional reduction in error.
+
+## The Likelihood Ratio Test
+
+-   How do we test $H_0: \beta_{x_1}=\beta_{x_2}=0$?
+
+-   Similar to the joint F-test in the linear model, we can define a likelihood ratio test when we use MLE. Define two models:
+
+    (1) $M_0:a$
+
+    (2) $M_1: a+b_1x_x+b_2 x_2$
+
+-   Let's estimate the second model by maximizing the log likelihood function ($loglik_{m1}$) and then estimate a second model where we constrain the two slopes to be 0. Then,
+
+$$G^2(M_0|M_1)=2 loglik_{m1}-2 loglik_{m0}$$
+
+## An Example
+
+```{r, echo = TRUE}
+library(lmtest)
+load("~/Dropbox/github_repos/teaching/POL683_Fall24/advancedRegression/vignettes/dataActive.rda")
+dat = dataActive %>% 
+  mutate(
+    pid = recode(pid3, "Democrat" = 1, "Independent" = 2, "Republican" = 3, "Other" = 2, "Not sure" = 2),
+    protest = ifelse(violent > 4, 1, 0)
+  ) 
+a =  glm(protest ~ 1,
+       family=binomial(link="logit"), data = dat)
+
+b =  glm(protest ~ as.factor(pid),
+       family=binomial(link="logit"), data = dat)
+
+lrtest(a, b)
+```
+
+## $G^2$
+
+-   The $G^2$ statistic is distributed $\chi^2$ with $df=$number of constraints (here 2). Clearly, we can reject the null of no influence, see Long (1997, page 94)
+
+-   We could flip things, and instead of comparing our model to one with no predictors, we could compare our model to one with predictors equal to the number of data points.
+
+## $G^2$ and Deviance
+
+$$G^2=2 loglik_{Full}-2 loglik_{M_1}$$
+
+$$Deviance=-2 loglik_{M_1}$$ 
+
+-   This is the **deviance**. It is just two times the log likelihood
+
+## Deviance
+
+-   In particular, the *Null Deviance* is
+
+$$Null,Deviance=2loglik_{full}-2log_lik{Null}$$
+
+-   The *Residual Deviance*
+
+$$Residual,Deviance=2loglik_{full}-2loglik_{My Model}$$
+
+## The Wald Test
+
+-   The Wald Test is asymptotically equal to the LR test
+
+$$Qb=r$$
+
+-   Let's assume one variable, so we estimate a slope and an intercept. Our $b$ vector is length 2
+
+-   Let's test the constraint that $b=0$, then declare $Q=(0,1)$ and $r=0$. The Wald statistic is
+
+$$W=(Qb-r)^T(Qvar(b)Q^T)^{-1}(Qb-r)$$
+
+## Deconstructing the Wald Test
+
+$$W=(Qb-r)^T(Qvar(b)Q^T)^{-1}(Qb-r)$$
+
+-   The left and rightmost portions estimate the distance between the actual value of $b$ and 0 -- regardless of the complexity
+
+-   The freed model relative to the constrained model
+
+-   Because there is uncertainty around the estimates, this is represented in the middle portion. Again, we multiple by Q because we are only concerned about $b$
+
+## Warning
+
+-   The Wald and LR tests are reasonable approaches, but
+
+-   Their small sample properties are somewhat unknown
+
+-   **They should only be used if the $\textit{null}$ model consists of the same data.**
+
+-   These methods can really only be used for nested model. In the case above, $b=0$ is a constraint, so the restricted/constrained model is nested in the unrestricted model.
+
+## Scalar Estimates Fit
+
+-   Scalar estimates of model fit are not incredibly meaningful in the logit/probit framework. Recall,
+
+$$R^2={RegSS\over TSS}=1-{RSS/TSS}$$
+
+-   The problem is that in the logit/probit model, we cannot directly compare $Y_{obs}$ to the prediction we make with respect to $Y_{latent}$
+
+
+## Scalar Estimates Fit
+
+-   Nonetheless, let's define the Efron (1978) measure of *pseudo-*$R^2$ as,
+
+$$Pseudo-R^2={1-{\sum (y-\hat{y_{latent}})^2}\over {\sum (y-\bar{y})^2)}}$$
+
+## Information Measures
+
+-   The Akaike Information Criterion (AIC) is defined as:
+
+$$AIC={{-2loglik(\theta)+2P}\over N}$$
+
+
+## Information Measures
+
+-   Calculate the $-2loglik$ and add 2 $\times$ the number of predictors, where $p=K+1$ (Long 1997, 109)
+
+-   Finally, divide by the number of observations. Notice what happens with this function. As the number of parameters increases, but the log-likelihood stays the same, the AIC will increase
+
+-   We should prefer a \emph{smaller} AIC. The statistic penalizes for added parameters that do not improve fit
+
+## BIC
+
+-   The *Bayesian Information Criterion (BIC)* is based on a comparision -- between a fully saturated model and the proposed model. The BIC is:
+
+$$BIC=D(M)-df ln N$$
+
+-  $D(M)$ is simply the deviance for the model 
+
+-  The degrees of freedom calculation is $N-k-1$, where $k$ is the number of predictors.
+
+## The Ordered Logit
+
+-   This summary follows your assigned reading in Long (1997)
+
+-   Only use an ordered parameterization when we have ordered data.
+
+-   Some data can be ordered, even if they are theoretically multidimensional; others should be modeled differently
+
+-   Examples: PID, Ideology (social and economic dimensions)
+
+-   "How much do you agree or disagree with the following item?" from "1" Strongly Disagree to "5" Strongly Agree.
+
+## Why not OLS?
+
+-   Ordered, non-interval level data may violate the assumptions of the classical linear regression model.
+
+1)  Non-constant variance.
+
+2)  Predictions may be non-sensical (i.e., we predict things outside of the observed bounds).
+
+3)  If the category distances are theoretically quite different.
+
+## Probit or Logit
+
+-   Ordered logit or probit is a manner of personal preference.
+
+-   The ordered logit and the proportional odds assumption.
+
+-   $y_{latent}$, where $y_{obs} \in (1,2,3,...k)$.
+
+## The Latent Variable Approach
+
+-   Instead of the variable being 0/1, it is not more than two categories that are ordered. Assume we knew $y_{latent}$ and would like to map that to observing a particular category.
+
+-   Using the same logic from the binary regression model, assume that we observe the category based on its orientation to a series of cutpoints, where
+
+$$y_i=m: \tau_{k-1}\leq y_{latent} < \tau_{k}$$
+
+## The Measurement Model
+
+-   The $\tau$ parameters represent a series of thresholds that map the latent variable onto the categorical variable.
+
+-   In $\texttt{MASS}::\texttt{polr}()$ these are "zeta"
+
+-   A \emph{measurement model} (Long 1997, 123)
+
+$$y_{obs} =
+  \begin{array}{lr}
+    A, \tau_0=\infty \leq y_{latent}<\tau_1\\
+    B, \tau_1\leq y_{latent}<\tau_2\\
+    C, \tau_2\leq y_{latent}<\tau_3\\
+    D, \tau_3\leq y_{latent}<\tau_4\\
+    E, \tau_4\leq y_{latent}<\tau_5=\infty
+  \end{array}
+$$
+
+## The Structural Model
+
+$$y_{latent}=\beta_0 + \beta_1x_i +...\sum^{J}_{j =1} \beta_j x_{ij}+e_i$$
+
+$$y=X\beta+e$$
+
+-   Where each row vector of X is a 1 (for the intercept) and any $j+1$ predictors.
+
+## Cutpoints
+
+So what we're doing is defining $K-1$ cutpoints, the slicing up the latent distribution into discrete categories.
+
+\begin{eqnarray*}
+pr(y_{i}=1|X_i) & = & pr(\tau_0 \leq y_{i,latent}<\tau_1)|X_i) \\
+             & = &  pr(\tau_0 \leq X_i b+e_i<\tau_1)|X_i) \\
+             & = &  pr(\tau_0 - X_ib \leq e_i<\tau_1-X_ib)|X_i) \\
+             & = &  pr(\tau_1-X_ib)|X_i)-pr(\tau_0 - X_ib|X_i) \\
+             & = &  F(\tau_1-X_ib)-F(\tau_0 - X_ib) \\
+\end{eqnarray*}
+
+## Cutpoints
+
+-   If F denotes the CDF, then for the ordered probit:
+
+-   The last row is simplified because the probability of the CDF evaluated from $-\infty$ to $\infty$ is 1, so the first term becomes 1. Any CDF is plausible, such as the logit, in which case we have,
+
+\begin{eqnarray*}
+Pr(y_{i}=k|X_i) & = &\Phi(\tau_1-\alpha-\beta X) \\
+             & = &  \Phi(\tau_2-\alpha-\beta X)-\Phi(\tau_1-\alpha-\beta X) \\
+             & = &  \Phi(\tau_3-\alpha-\beta X)-\Phi(\tau_2-\alpha-\beta X)\\
+             & = &  1-\Phi(\tau_4-\alpha-\beta X)\\
+\end{eqnarray*}
+
+## The Ordered Logit
+
+\begin{eqnarray*}
+Pr(y_{i}=k|X_i) & = &Logit(\tau_1-\alpha-\beta X) \\
+                & = &  Logit(\tau_2-\alpha-\beta X)-Logit(\tau_1-\alpha-\beta X) \\
+                & = &  Logit(\tau_3-\alpha-\beta X)-Logit(\tau_2-\alpha-\beta X)\\
+             & = &  1-Logit(\tau_4-\alpha-\beta X)\\
+\end{eqnarray*}
+
+-   $F$ generically to mean the CDF; and $f$ to denote the PDF.
+
+## The Likelihood
+
+-   Recall, that the probability of being in the $k$th category for the $i$th subject is,
+
+\begin{eqnarray*}
+pr(y_{i}=k|X_i) & = & F(\tau_k-\alpha-X_i\beta)-F(\tau_{k-1}-\alpha-X_i\beta) \\
+\end{eqnarray*}
+
+## The Likelihood
+
+$$Pr(y_{i}=1|X_i)\times pr(y_{i}=2|X_i) \times pr(y_{i}=3|X_i) \times....pr(y_{i}=K|X_i)$$.
+
+This is just the joint probability for category membership, for each subject, so
+
+\begin{eqnarray*}
+Pr(y_{i}|X_i) & = & \prod_{k=1}^K F(\tau_k-\alpha-X_i\beta)-F(\tau_{k-1}-\alpha-X_i\beta) \\
+\end{eqnarray*}
+
+## The Likelihood
+
+-   This only refers to the probability space for a single subject. Since the likelihood is $\prod_{i=1}^N p_i$, we need to calculate the joint probability for each subject, which is,
+
+\begin{eqnarray*}
+pr(y|X) & = & \prod_{i=1}^N \prod_{k=1}^K F(\tau_k-\alpha-X_i\beta)-F(\tau_{k-1}-\alpha-X_i\beta) \\
+L(\beta \tau | y, X)& = & \prod_{i=1}^N \prod_{k=1}^K F(\tau_k-\alpha-X_i\beta)-F(\tau_{k-1}-\alpha-X_i\beta) \\
+\end{eqnarray*}
+
+## The Log Likelihood
+
+\begin{eqnarray*}
+Loglik(\beta \tau | y, X)& = & \sum_{i=1}^N \sum_{k=1}^K log[F(\tau_k-\alpha-X_i\beta)-F(\tau_{k-1}-\alpha-X_i\beta)] \\
+\end{eqnarray*}
+
+-   Like the binary case: $x \rightarrow y_{latent} \rightarrow y_{obs}$.
+
+-   The only thing that is different is that instead of a single cutpoint -- at 0 -- we have a series of cutpoints.
+
+## Parallel Lines
+
+```{r}
+library(plotly)
+
+# Create data for parallel lines using the logit function
+x <- seq(-10, 10, length.out = 100)
+logit <- function(x) 1 / (1 + exp(-x))
+
+# Create y values for three parallel lines with different intercepts
+y1 <- logit(x + 1)
+y2 <- logit(x + 3)
+y3 <- logit(x + 5)
+
+# Create a data frame
+data <- data.frame(x, y1, y2, y3)
+
+# Plot using Plotly
+fig <- plot_ly(data, x = ~x) %>%
+  add_trace(y = ~y1, type = 'scatter', mode = 'lines', name = 'Line 1') %>%
+  add_trace(y = ~y2, type = 'scatter', mode = 'lines', name = 'Line 2') %>%
+  add_trace(y = ~y3, type = 'scatter', mode = 'lines', name = 'Line 3') %>%
+  layout(title = 'Parallel Lines using Logit Function',
+         xaxis = list(title = 'X-axis'),
+         yaxis = list(title = 'Y-axis'))
+
+fig
+```
+
+## Estimation
+
+```{r, echo = TRUE}
+library(dplyr)
+library(MASS)
+
+load("~/Dropbox/github_repos/teaching/POL683_Fall24/advancedRegression/vignettes/dataActive.rda")
+dat = dataActive %>% 
+  mutate(
+    pid = recode(pid3, "Democrat" = 1, "Independent" = 2, "Republican" = 3, "Other" = 2, "Not sure" = 2),
+    ideo = ifelse(ideo5 == "Very liberal", 1, 0),
+    liberal = ifelse(ideo5 == "Liberal" | ideo5 == "Very liberal", 1, 0),
+    independent = ifelse(ideo5 == "Moderate", 1, 0),
+    conservative = ifelse(ideo5 == "Conservative" | ideo5 == "Very conservative", 1, 0),
+    int1 = conservative*authoritarianism,
+    int2 = independent*authoritarianism,
+  ) 
+my_model = polr(as.factor(pid) ~ conservative + independent + authoritarianism +
+                  int1 + int2, data = dat)
+summary(my_model)
+
+```
+
+## Interpretation
+
+-   How do we make sense of this?
+
+-   Follow the same protocol as before.
+
+-   Simulate data, generate predictions, and interpret the results.
+
+## Simulating Data, Generating Predictions
+
+```{r}
+library(tidyverse)
+library(ggridges)
+# Generate prediction data
+newdat =  expand.grid(conservative = 1,
+                                 independent = 0,
+                                 authoritarianism = c(0,1)) %>%
+            mutate(
+              int1 = conservative*authoritarianism,
+              int2 = independent*authoritarianism
+  ) ##j x 6
+
+parameters = mvrnorm(1000, c(coefficients(my_model),  my_model$zeta), vcov(my_model)) %>% as.data.frame()
+# Keep parameters if in newdat
+data.frame(
+  authoritarianism = 1,
+  categoryDem = plogis(parameters$`1|2` - as.matrix(parameters[,names(parameters) %in% names(newdat)]) %*% t(as.matrix(newdat))[,1]) ,
+  categoryInd = plogis(parameters$`2|3` - as.matrix(parameters[,names(parameters) %in% names(newdat)]) %*% t(as.matrix(newdat))[,1]),
+  categoryRep = 1 - plogis(parameters$`2|3` - as.matrix(parameters[,names(parameters) %in% names(newdat)]) %*% t(as.matrix(newdat))[,1]) 
+  ) %>%
+  pivot_longer(cols = starts_with("category"), names_to = "category", values_to = "value") %>%
+ggplot(aes(x = value, y = category, fill = category)) +
+  geom_density_ridges(alpha = 0.7, color = "white") +
+  theme_ridges() +
+  labs(title = "Partisanship among Authoritarians", x = "Probability", y = "PID") + 
+  scale_fill_manual(values = c("blue", "purple", "red")) 
+
+```

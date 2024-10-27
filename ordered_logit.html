@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<script src="ordered_logit_files/libs/clipboard/clipboard.min.js"></script>
+<script src="ordered_logit_files/libs/quarto-html/tabby.min.js"></script>
+<script src="ordered_logit_files/libs/quarto-html/popper.min.js"></script>
+<script src="ordered_logit_files/libs/quarto-html/tippy.umd.min.js"></script>
+<link href="ordered_logit_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="ordered_logit_files/libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="ordered_logit_files/libs/quarto-html/quarto-html.min.css" rel="stylesheet" data-mode="light">
+<link href="ordered_logit_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.5.57">
+
+  <meta name="author" content="Christopher Weber">
+  <meta name="dcterms.date" content="2024-10-21">
+  <title>Extending the Binary Model: Ordered Logit and Probit</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="ordered_logit_files/libs/revealjs/dist/reset.css">
+  <link rel="stylesheet" href="ordered_logit_files/libs/revealjs/dist/reveal.css">
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      { color: #003b4f; background-color: #f1f3f5; }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span { color: #003b4f; } /* Normal */
+    code span.al { color: #ad0000; } /* Alert */
+    code span.an { color: #5e5e5e; } /* Annotation */
+    code span.at { color: #657422; } /* Attribute */
+    code span.bn { color: #ad0000; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #003b4f; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #20794d; } /* Char */
+    code span.cn { color: #8f5902; } /* Constant */
+    code span.co { color: #5e5e5e; } /* Comment */
+    code span.cv { color: #5e5e5e; font-style: italic; } /* CommentVar */
+    code span.do { color: #5e5e5e; font-style: italic; } /* Documentation */
+    code span.dt { color: #ad0000; } /* DataType */
+    code span.dv { color: #ad0000; } /* DecVal */
+    code span.er { color: #ad0000; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #ad0000; } /* Float */
+    code span.fu { color: #4758ab; } /* Function */
+    code span.im { color: #00769e; } /* Import */
+    code span.in { color: #5e5e5e; } /* Information */
+    code span.kw { color: #003b4f; font-weight: bold; } /* Keyword */
+    code span.op { color: #5e5e5e; } /* Operator */
+    code span.ot { color: #003b4f; } /* Other */
+    code span.pp { color: #ad0000; } /* Preprocessor */
+    code span.sc { color: #5e5e5e; } /* SpecialChar */
+    code span.ss { color: #20794d; } /* SpecialString */
+    code span.st { color: #20794d; } /* String */
+    code span.va { color: #111111; } /* Variable */
+    code span.vs { color: #20794d; } /* VerbatimString */
+    code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="ordered_logit_files/libs/revealjs/dist/theme/quarto.css">
+  <link rel="stylesheet" href="style_pres.css">
+  <link href="ordered_logit_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
+  <link href="ordered_logit_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
+  <link href="ordered_logit_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
+  <link href="ordered_logit_files/libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
+  <style type="text/css">
+
+  .callout {
+    margin-top: 1em;
+    margin-bottom: 1em;  
+    border-radius: .25rem;
+  }
+
+  .callout.callout-style-simple { 
+    padding: 0em 0.5em;
+    border-left: solid #acacac .3rem;
+    border-right: solid 1px silver;
+    border-top: solid 1px silver;
+    border-bottom: solid 1px silver;
+    display: flex;
+  }
+
+  .callout.callout-style-default {
+    border-left: solid #acacac .3rem;
+    border-right: solid 1px silver;
+    border-top: solid 1px silver;
+    border-bottom: solid 1px silver;
+  }
+
+  .callout .callout-body-container {
+    flex-grow: 1;
+  }
+
+  .callout.callout-style-simple .callout-body {
+    font-size: 1rem;
+    font-weight: 400;
+  }
+
+  .callout.callout-style-default .callout-body {
+    font-size: 0.9rem;
+    font-weight: 400;
+  }
+
+  .callout.callout-titled.callout-style-simple .callout-body {
+    margin-top: 0.2em;
+  }
+
+  .callout:not(.callout-titled) .callout-body {
+      display: flex;
+  }
+
+  .callout:not(.no-icon).callout-titled.callout-style-simple .callout-content {
+    padding-left: 1.6em;
+  }
+
+  .callout.callout-titled .callout-header {
+    padding-top: 0.2em;
+    margin-bottom: -0.2em;
+  }
+
+  .callout.callout-titled .callout-title  p {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+  }
+    
+  .callout.callout-titled.callout-style-simple .callout-content  p {
+    margin-top: 0;
+  }
+
+  .callout.callout-titled.callout-style-default .callout-content  p {
+    margin-top: 0.7em;
+  }
+
+  .callout.callout-style-simple div.callout-title {
+    border-bottom: none;
+    font-size: .9rem;
+    font-weight: 600;
+    opacity: 75%;
+  }
+
+  .callout.callout-style-default  div.callout-title {
+    border-bottom: none;
+    font-weight: 600;
+    opacity: 85%;
+    font-size: 0.9rem;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+  }
+
+  .callout.callout-style-default div.callout-content {
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+  }
+
+  .callout.callout-style-simple .callout-icon::before {
+    height: 1rem;
+    width: 1rem;
+    display: inline-block;
+    content: "";
+    background-repeat: no-repeat;
+    background-size: 1rem 1rem;
+  }
+
+  .callout.callout-style-default .callout-icon::before {
+    height: 0.9rem;
+    width: 0.9rem;
+    display: inline-block;
+    content: "";
+    background-repeat: no-repeat;
+    background-size: 0.9rem 0.9rem;
+  }
+
+  .callout-title {
+    display: flex
+  }
+    
+  .callout-icon::before {
+    margin-top: 1rem;
+    padding-right: .5rem;
+  }
+
+  .callout.no-icon::before {
+    display: none !important;
+  }
+
+  .callout.callout-titled .callout-body > .callout-content > :last-child {
+    padding-bottom: 0.5rem;
+    margin-bottom: 0;
+  }
+
+  .callout.callout-titled .callout-icon::before {
+    margin-top: .5rem;
+    padding-right: .5rem;
+  }
+
+  .callout:not(.callout-titled) .callout-icon::before {
+    margin-top: 1rem;
+    padding-right: .5rem;
+  }
+
+  /* Callout Types */
+
+  div.callout-note {
+    border-left-color: #4582ec !important;
+  }
+
+  div.callout-note .callout-icon::before {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAIKADAAQAAAABAAAAIAAAAACshmLzAAAEU0lEQVRYCcVXTWhcVRQ+586kSUMMxkyaElstCto2SIhitS5Ek8xUKV2poatCcVHtUlFQk8mbaaziwpWgglJwVaquitBOfhQXFlqlzSJpFSpIYyXNjBNiTCck7x2/8/LeNDOZxDuEkgOXe++553zfefee+/OYLOXFk3+1LLrRdiO81yNqZ6K9cG0P3MeFaMIQjXssE8Z1JzLO9ls20MBZX7oG8w9GxB0goaPrW5aNMp1yOZIa7Wv6o2ykpLtmAPs/vrG14Z+6d4jpbSKuhdcSyq9wGMPXjonwmESXrriLzFGOdDBLB8Y6MNYBu0dRokSygMA/mrun8MGFN3behm6VVAwg4WR3i6FvYK1T7MHo9BK7ydH+1uurECoouk5MPRyVSBrBHMYwVobG2aOXM07sWrn5qgB60rc6mcwIDJtQrnrEr44kmy+UO9r0u9O5/YbkS9juQckLed3DyW2XV/qWBBB3ptvI8EUY3I9p/67OW+g967TNr3Sotn3IuVlfMLVnsBwH4fsnebJvyGm5GeIUA3jljERmrv49SizPYuq+z7c2H/jlGC+Ghhupn/hcapqmcudB9jwJ/3jvnvu6vu5lVzF1fXyZuZZ7U8nRmVzytvT+H3kilYvH09mLWrQdwFSsFEsxFVs5fK7A0g8gMZjbif4ACpKbjv7gNGaD8bUrlk8x+KRflttr22JEMRUbTUwwDQScyzPgedQHZT0xnx7ujw2jfVfExwYHwOsDTjLdJ2ebmeQIlJ7neo41s/DrsL3kl+W2lWvAga0tR3zueGr6GL78M3ifH0rGXrBC2aAR8uYcIA5gwV8zIE8onoh8u0Fca/ciF7j1uOzEnqcIm59sEXoGc0+z6+H45V1CvAvHcD7THztu669cnp+L0okAeIc6zjbM/24LgGM1gZk7jnRu1aQWoU9sfUOuhrmtaPIO3YY1KLLWZaEO5TKUbMY5zx8W9UJ6elpLwKXbsaZ4EFl7B4bMtDv0iRipKoDQT2sNQI9b1utXFdYisi+wzZ/ri/1m7QfDgEuvgUUEIJPq3DhX/5DWNqIXDOweC2wvIR90Oq3lDpdMIgD2r0dXvGdsEW5H6x6HLRJYU7C69VefO1x8Gde1ZFSJLfWS1jbCnhtOPxmpfv2LXOA2Xk2tvnwKKPFuZ/oRmwBwqRQDcKNeVQkYcOjtWVBuM/JuYw5b6isojIkYxyYAFn5K7ZBF10fea52y8QltAg6jnMqNHFBmGkQ1j+U43HMi2xMar1Nv0zGsf1s8nUsmUtPOOrbFIR8bHFDMB5zL13Gmr/kGlCkUzedTzzmzsaJXhYawnA3UmARpiYj5ooJZiUoxFRtK3X6pgNPv+IZVPcnwbOl6f+aBaO1CNvPW9n9LmCp01nuSaTRF2YxHqZ8DYQT6WsXT+RD6eUztwYLZ8rM+rcPxamv1VQzFUkzFXvkiVrySGQgJNvXHJAxiU3/NwiC03rSf05VBaPtu/Z7/B8Yn/w7eguloAAAAAElFTkSuQmCC');
+  }
+
+  div.callout-note.callout-style-default .callout-title {
+    background-color: #dae6fb
+  }
+
+  div.callout-important {
+    border-left-color: #d9534f !important;
+  }
+
+  div.callout-important .callout-icon::before {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAIKADAAQAAAABAAAAIAAAAACshmLzAAAEKklEQVRYCcVXTWhcVRS+575MJym48A+hSRFr00ySRQhURRfd2HYjk2SSTokuBCkU2o0LoSKKraKIBTcuFCoidGFD08nkBzdREbpQ1EDNIv8qSGMFUboImMSZd4/f9zJv8ibJMC8xJQfO3HPPPef7zrvvvnvviIkpC9nsw0UttFunbUhpFzFtarSd6WJkStVMw5xyVqYTvkwfzuf/5FgtkVoB0729j1rjXwThS7Vio+Mo6DNnvLfahoZ+i/o32lULuJ3NNiz7q6+pyAUkJaFF6JwaM2lUJlV0MlnQn5aTRbEu0SEqHUa0A4AdiGuB1kFXRfVyg5d87+Dg4DL6m2TLAub60ilj7A1Ec4odSAc8X95sHh7+ZRPCFo6Fnp7HfU/fBng/hi10CjCnWnJjsxvDNxWw0NfV6Rv5GgP3I3jGWXumdTD/3cbEOP2ZbOZp69yniG3FQ9z1jD7bnBu9Fc2tKGC2q+uAJOQHBDRiZX1x36o7fWBs7J9ownbtO+n0/qWkvW7UPIfc37WgT6ZGR++EOJyeQDSb9UB+DZ1G6DdLDzyS+b/kBCYGsYgJbSQHuThGKRcw5xdeQf8YdNHsc6ePXrlSYMBuSIAFTGAtQo+VuALo4BX83N190NWZWbynBjhOHsmNfFWLeL6v+ynsA58zDvvAC8j5PkbOcXCMg2PZFk3q8MjI7WAG/Dp9AwP7jdGBOOQkAvlFUB+irtm16I1Zw9YBcpGTGXYmk3kQIC/Cds55l+iMI3jqhjAuaoe+am2Jw5GT3Nbz3CkE12NavmzN5+erJW7046n/CH1RO/RVa8lBLozXk9uqykkGAyRXLWlLv5jyp4RFsG5vGVzpDLnIjTWgnRy2Rr+tDKvRc7Y8AyZq10jj8DqXdnIRNtFZb+t/ZRtXcDiVnzpqx8mPcDWxgARUqx0W1QB9MeUZiNrV4qP+Ehc+BpNgATsTX8ozYKL2NtFYAHc84fG7ndxUPr+AR/iQSns7uSUufAymwDOb2+NjK27lEFocm/EE2WpyIy/Hi66MWuMKJn8RvxIcj87IM5Vh9663ziW36kR0HNenXuxmfaD8JC7tfKbrhFr7LiZCrMjrzTeGx+PmkosrkNzW94ObzwocJ7A1HokLolY+AvkTiD/q1H0cN48c5EL8Crkttsa/AXQVDmutfyku0E7jShx49XqV3MFK8IryDhYVbj7Sj2P2eBxwcXoe8T8idsKKPRcnZw1b+slFTubwUwhktrfnAt7J++jwQtLZcm3sr9LQrjRzz6cfMv9aLvgmnAGvpoaGLxM4mAEaLV7iAzQ3oU0IvD5x9ix3yF2RAAuYAOO2f7PEFWCXZ4C9Pb2UsgDeVnFSpbFK7/IWu7TPTvBqzbGdCHOJQSxiEjt6IyZmxQyEJHv6xyQsYk//moVFsN2zP6fRImjfq7/n/wFDguUQFNEwugAAAABJRU5ErkJggg==');
+  }
+
+  div.callout-important.callout-style-default .callout-title {
+    background-color: #f7dddc
+  }
+
+  div.callout-warning {
+    border-left-color: #f0ad4e !important;
+  }
+
+  div.callout-warning .callout-icon::before {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAIKADAAQAAAABAAAAIAAAAACshmLzAAAETklEQVRYCeVWW2gcVRg+58yaTUnizqbipZeX4uWhBEniBaoUX1Ioze52t7sRq6APio9V9MEaoWlVsFasRq0gltaAPuxms8lu0gcviE/FFOstVbSIxgcv6SU7EZqmdc7v9+9mJtNks51NTUH84ed889/PP+cmxP+d5FIbMJmNbpREu4WUkiTtCicKny0l1pIKmBzovF2S+hIJHX8iEu3hZJ5lNZGqyRrGSIQpq15AzF28jgpeY6yk6GVdrfFqdrD6Iw+QlB8g0YS2g7dyQmXM/IDhBhT0UCiRf59lfqmmDvzRt6kByV/m4JjtzuaujMUM2c5Z2d6JdKrRb3K2q6mA+oYVz8JnDdKPmmNthzkAk/lN63sYPgevrguc72aZX/L9C6x09GYyxBgCX4NlvyGUHOKELlm5rXeR1kchuChJt4SSwyddZRXgvwMGvYo4QSlk3/zkHD8UHxwVJA6zjZZqP8v8kK8OWLnIZtLyCAJagYC4rTGW/9Pqj92N/c+LUaAj27movwbi19tk/whRCIE7Q9vyI6yvRpftAKVTdUjOW40X3h5OXsKCdmFcx0xlLJoSuQngnrJe7Kcjm4OMq9FlC7CMmScQANuNvjfP3PjGXDBaUQmbp296S5L4DrpbrHN1T87ZVEZVCzg1FF0Ft+dKrlLukI+/c9ENo+TvlTDbYFvuKPtQ9+l052rXrgKoWkDAFnvh0wTOmYn8R5f4k/jN/fZiCM1tQx9jQQ4ANhqG4hiL0qIFTGViG9DKB7GYzgubnpofgYRwO+DFjh0Zin2m4b/97EDkXkc+f6xYAPX0KK2I/7fUQuwzuwo/L3AkcjugPNixC8cHf0FyPjWlItmLxWw4Ou9YsQCr5fijMGoD/zpdRy95HRysyXA74MWOnscpO4j2y3HAVisw85hX5+AFBRSHt4ShfLFkIMXTqyKFc46xdzQM6XbAi702a7sy04J0+feReMFKp5q9esYLCqAZYw/k14E/xcLLsFElaornTuJB0svMuJINy8xkIYuL+xPAlWRceH6+HX7THJ0djLUom46zREu7tTkxwmf/FdOZ/sh6Q8qvEAiHpm4PJ4a/doJe0gH1t+aHRgCzOvBvJedEK5OFE5jpm4AGP2a8Dxe3gGJ/pAutug9Gp6he92CsSsWBaEcxGx0FHytmIpuqGkOpldqNYQK8cSoXvd+xLxXADw0kf6UkJNFtdo5MOgaLjiQOQHcn+A6h5NuL2s0qsC2LOM75PcF3yr5STuBSAcGG+meA14K/CI21HcS4LBT6tv0QAh8Dr5l93AhZzG5ZJ4VxAqdZUEl9z7WJ4aN+svMvwHHL21UKTd1mqvChH7/Za5xzXBBKrUcB0TQ+Ulgkfbi/H/YT5EptrGzsEK7tR1B7ln9BBwckYfMiuSqklSznIuoIIOM42MQO+QnduCoFCI0bpkzjCjddHPN/F+2Yu+sd9bKNpVwHhbS3LluK/0zgfwD0xYI5dXuzlQAAAABJRU5ErkJggg==');
+  }
+
+  div.callout-warning.callout-style-default .callout-title {
+    background-color: #fcefdc
+  }
+
+  div.callout-tip {
+    border-left-color: #02b875 !important;
+  }
+
+  div.callout-tip .callout-icon::before {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAIKADAAQAAAABAAAAIAAAAACshmLzAAADr0lEQVRYCe1XTWgTQRj9ZjZV8a9SPIkKgj8I1bMHsUWrqYLVg4Ue6v9BwZOxSYsIerFao7UiUryIqJcqgtpimhbBXoSCVxUFe9CTiogUrUp2Pt+3aUI2u5vdNh4dmMzOzHvvezuz8xNFM0mjnbXaNu1MvFWRXkXEyE6aYOYJpdW4IXuA4r0fo8qqSMDBU0v1HJUgVieAXxzCsdE/YJTdFcVIZQNMyhruOMJKXYFoLfIfIvVIMWdsrd+Rpd86ZmyzzjJmLStqRn0v8lzkb4rVIXvnpScOJuAn2ACC65FkPzEdEy4TPWRLJ2h7z4cArXzzaOdKlbOvKKX25Wl00jSnrwVxAg3o4dRxhO13RBSdNvH0xSARv3adTXbBdTf64IWO2vH0LT+cv4GR1DJt+DUItaQogeBX/chhbTBxEiZ6gftlDNXTrvT7co4ub5A6gp9HIcHvzTa46OS5fBeP87Qm0fQkr4FsYgVQ7Qg+ZayaDg9jhg1GkWj8RG6lkeSacrrHgDaxdoBiZPg+NXV/KifMuB6//JmYH4CntVEHy/keA6x4h4CU5oFy8GzrBS18cLJMXcljAKB6INjWsRcuZBWVaS3GDrqB7rdapVIeA+isQ57Eev9eCqzqOa81CY05VLd6SamW2wA2H3SiTbnbSxmzfp7WtKZkqy4mdyAlGx7ennghYf8voqp9cLSgKdqNfa6RdRsAAkPwRuJZNbpByn+RrJi1RXTwdi8RQF6ymDwGMAtZ6TVE+4uoKh+MYkcLsT0Hk8eAienbiGdjJHZTpmNjlbFJNKDVAp2fJlYju6IreQxQ08UJDNYdoLSl6AadO+fFuCQqVMB1NJwPm69T04Wv5WhfcWyfXQB+wXRs1pt+nCknRa0LVzSA/2B+a9+zQJadb7IyyV24YAxKp2Jqs3emZTuNnKxsah+uabKbMk7CbTgJx/zIgQYErIeTKRQ9yD9wxVof5YolPHqaWo7TD6tJlh7jQnK5z2n3+fGdggIOx2kaa2YI9QWarc5Ce1ipNWMKeSG4DysFF52KBmTNMmn5HqCFkwy34rDg05gDwgH3bBi+sgFhN/e8QvRn8kbamCOhgrZ9GJhFDgfcMHzFb6BAtjKpFhzTjwv1KCVuxHvCbsSiEz4CANnj84cwHdFXAbAOJ4LTSAawGWFn5tDhLMYz6nWeU2wJfIhmIJBefcd/A5FWQWGgrWzyORZ3Q6HuV+Jf0Bj+BTX69fm1zWgK7By1YTXchFDORywnfQ7GpzOo6S+qECrsx2ifVQAAAABJRU5ErkJggg==');
+  }
+
+  div.callout-tip.callout-style-default .callout-title {
+    background-color: #ccf1e3
+  }
+
+  div.callout-caution {
+    border-left-color: #fd7e14 !important;
+  }
+
+  div.callout-caution .callout-icon::before {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAIKADAAQAAAABAAAAIAAAAACshmLzAAACV0lEQVRYCdVWzWoUQRCuqp2ICBLJXgITZL1EfQDBW/bkzUMUD7klD+ATSHBEfAIfQO+iXsWDxJsHL96EHAwhgzlkg8nBg25XWb0zIb0zs9muYYWkoKeru+vn664fBqElyZNuyh167NXJ8Ut8McjbmEraKHkd7uAnAFku+VWdb3reSmRV8PKSLfZ0Gjn3a6Xlcq9YGb6tADjn+lUfTXtVmaZ1KwBIvFI11rRXlWlatwIAAv2asaa9mlB9wwygiDX26qaw1yYPzFXg2N1GgG0FMF8Oj+VIx7E/03lHx8UhvYyNZLN7BwSPgekXXLribw7w5/c8EF+DBK5idvDVYtEEwMeYefjjLAdEyQ3M9nfOkgnPTEkYU+sxMq0BxNR6jExrAI31H1rzvLEfRIdgcv1XEdj6QTQAS2wtstEALLG1yEZ3QhH6oDX7ExBSFEkFINXH98NTrme5IOaaA7kIfiu2L8A3qhH9zRbukdCqdsA98TdElyeMe5BI8Rs2xHRIsoTSSVFfCFCWGPn9XHb4cdobRIWABNf0add9jakDjQJpJ1bTXOJXnnRXHRf+dNL1ZV1MBRCXhMbaHqGI1JkKIL7+i8uffuP6wVQAzO7+qVEbF6NbS0LJureYcWXUUhH66nLR5rYmva+2tjRFtojkM2aD76HEGAD3tPtKM309FJg5j/K682ywcWJ3PASCcycH/22u+Bh7Aa0ehM2Fu4z0SAE81HF9RkB21c5bEn4Dzw+/qNOyXr3DCTQDMBOdhi4nAgiFDGCinIa2owCEChUwD8qzd03PG+qdW/4fDzjUMcE1ZpIAAAAASUVORK5CYII=');
+  }
+
+  div.callout-caution.callout-style-default .callout-title {
+    background-color: #ffe5d0
+  }
+
+  </style>
+  <style type="text/css">
+    .reveal div.sourceCode {
+      margin: 0;
+      overflow: auto;
+    }
+    .reveal div.hanging-indent {
+      margin-left: 1em;
+      text-indent: -1em;
+    }
+    .reveal .slide:not(.center) {
+      height: 100%;
+    }
+    .reveal .slide.scrollable {
+      overflow-y: auto;
+    }
+    .reveal .footnotes {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide .absolute {
+      position: absolute;
+      display: block;
+    }
+    .reveal .footnotes ol {
+      counter-reset: ol;
+      list-style-type: none; 
+      margin-left: 0;
+    }
+    .reveal .footnotes ol li:before {
+      counter-increment: ol;
+      content: counter(ol) ". "; 
+    }
+    .reveal .footnotes ol li > p:first-child {
+      display: inline-block;
+    }
+    .reveal .slide ul,
+    .reveal .slide ol {
+      margin-bottom: 0.5em;
+    }
+    .reveal .slide ul li,
+    .reveal .slide ol li {
+      margin-top: 0.4em;
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide ul[role="tablist"] li {
+      margin-bottom: 0;
+    }
+    .reveal .slide ul li > *:first-child,
+    .reveal .slide ol li > *:first-child {
+      margin-block-start: 0;
+    }
+    .reveal .slide ul li > *:last-child,
+    .reveal .slide ol li > *:last-child {
+      margin-block-end: 0;
+    }
+    .reveal .slide .columns:nth-child(3) {
+      margin-block-start: 0.8em;
+    }
+    .reveal blockquote {
+      box-shadow: none;
+    }
+    .reveal .tippy-content>* {
+      margin-top: 0.2em;
+      margin-bottom: 0.7em;
+    }
+    .reveal .tippy-content>*:last-child {
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide > img.stretch.quarto-figure-center,
+    .reveal .slide > img.r-stretch.quarto-figure-center {
+      display: block;
+      margin-left: auto;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-left,
+    .reveal .slide > img.r-stretch.quarto-figure-left  {
+      display: block;
+      margin-left: 0;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-right,
+    .reveal .slide > img.r-stretch.quarto-figure-right  {
+      display: block;
+      margin-left: auto;
+      margin-right: 0; 
+    }
+  </style>
+  <link href="ordered_logit_files/libs/htmltools-fill-0.5.8.1/fill.css" rel="stylesheet">
+  <script src="ordered_logit_files/libs/htmlwidgets-1.6.4/htmlwidgets.js"></script>
+  <script src="ordered_logit_files/libs/plotly-binding-4.10.4/plotly.js"></script>
+  <script src="ordered_logit_files/libs/typedarray-0.1/typedarray.min.js"></script>
+  <script src="ordered_logit_files/libs/jquery-3.5.1/jquery.min.js"></script>
+  <link href="ordered_logit_files/libs/crosstalk-1.2.1/css/crosstalk.min.css" rel="stylesheet">
+  <script src="ordered_logit_files/libs/crosstalk-1.2.1/js/crosstalk.min.js"></script>
+  <link href="ordered_logit_files/libs/plotly-htmlwidgets-css-2.11.1/plotly-htmlwidgets.css" rel="stylesheet">
+  <script src="ordered_logit_files/libs/plotly-main-2.11.1/plotly-latest.min.js"></script>
+</head>
+<body class="quarto-light">
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide" class="quarto-title-block center">
+  <h1 class="title">Extending the Binary Model: Ordered Logit and Probit</h1>
+
+<div class="quarto-title-authors">
+<div class="quarto-title-author">
+<div class="quarto-title-author-name">
+Christopher Weber 
+</div>
+</div>
+</div>
+
+  <p class="date">2024-10-21</p>
+</section>
+<section id="comments-on-model-fit-and-interpretation" class="slide level2">
+<h2>Comments On Model Fit and Interpretation</h2>
+<ul>
+<li><p>These notes track the assigned reading in Long (1997) on model fit, interpetation, and the ordered regression model</p></li>
+<li><p>The problem with the categorical models we’ve explored is that they are not directly interpretable, due to the non-linearity of the effect of <span class="math inline">\(x\)</span> on <span class="math inline">\(y\)</span></p></li>
+<li><p>The partial derivatives with respect to <span class="math inline">\(x\)</span>, <span class="math inline">\({{\partial F(x)} \over {\partial x}}=f(x)\)</span>:</p></li>
+</ul>
+<p><span class="math display">\[{{\partial F(x)}\over{\partial x}}=b \times f(x)\]</span></p>
+</section>
+<section id="non-linearity" class="slide level2">
+<h2>Non Linearity</h2>
+<ul>
+<li>In this case, f(x) is either the logit or probit PDF.</li>
+</ul>
+<p><span class="math display">\[{{\partial F_{logit}(x)}\over{\partial x}}=b \times {{exp(a+bx)}\over{1+exp(a+bx)^2}}\]</span></p>
+<ul>
+<li><em>For probit, just replace f(x) with the normal PDF</em></li>
+</ul>
+</section>
+<section id="non-additivity" class="slide level2">
+<h2>Non Additivity</h2>
+<ul>
+<li>It is even more challenging to interpret the results when there are other covariates, since:</li>
+</ul>
+<p><span class="math display">\[{{\partial F_{logit}(x)}\over{\partial x_k}}=b_k \times {{exp(a+\sum b_j x_j)}\over{1+exp(a+\sum b_j x_j)^2}}\]</span></p>
+<ul>
+<li><p>Partial derivative for the latent variable?</p></li>
+<li><p>This is ill-advised: The coefficients depend on the scale of the error term</p></li>
+</ul>
+</section>
+<section id="standardize" class="slide level2">
+<h2>Standardize?</h2>
+<ul>
+<li><p>We could partially standardized the slopes, by dividing each slope by the standard deviation of <span class="math inline">\(y\)</span>, (<span class="math inline">\(b/s_y)\)</span></p></li>
+<li><p>Now the interpretation is, “for a one unit change in x we anticipate a b standard deviation change in <span class="math inline">\(y_{latent}\)</span>”</p></li>
+<li><p>What does <span class="math inline">\(y_{latent}\)</span> mean in practice?</p></li>
+</ul>
+</section>
+<section id="is-it-a-linear-model" class="slide level2">
+<h2>Is it a Linear Model?</h2>
+<ul>
+<li>Recall the logit model is:</li>
+</ul>
+<p><span class="math display">\[{log{{\theta_i}\over{1-\theta_i}}}=x_iB\]</span></p>
+<ul>
+<li><p>Every coefficient in the model represents the expected log change in the odds for a unit change in <span class="math inline">\(x\)</span>.</p></li>
+<li><p>Unlike an OLS model, the coefficients in the logit (or probit) are not directly interpretable.</p></li>
+<li><p>The problem more or less boils down to something relatively simple: <strong>The model is non-additive and non-linear.</strong></p></li>
+</ul>
+</section>
+<section id="model-fit" class="slide level2">
+<h2>Model Fit</h2>
+<ul>
+<li><p>Model fit is an important, though difficult, topic when we are dealing with non-linear models</p></li>
+<li><p>We derive scalar measures of model fit from the linear model, like, <span class="math inline">\(R^2\)</span></p></li>
+<li><p>It’s hard to find a comparably reliable statistic for non-linear models</p></li>
+<li><p>We never observe <span class="math inline">\(y_{latent}\)</span> directly</p></li>
+<li><p>What is <strong>“percent variance explained”</strong> on an unobserved scale?</p></li>
+</ul>
+</section>
+<section id="model-fit-and-maximum-likelihood" class="slide level2">
+<h2>Model Fit and Maximum Likelihood</h2>
+</section>
+<section id="counts-correctly-predicted" class="slide level2">
+<h2>Counts correctly predicted</h2>
+<ul>
+<li><p>A matrix which is the predicted value of <span class="math inline">\(y_{obs}\)</span> and the actual value of <span class="math inline">\(y\)</span></p></li>
+<li><p>In this 2x2 matrix, the 1,1 and 0,0 entries represent accurate predictions</p></li>
+<li><p>The off-diagonals are inaccurate predictions</p></li>
+</ul>
+</section>
+<section id="counts-correctly-predicted-1" class="slide level2">
+<h2>Counts correctly predicted</h2>
+<ul>
+<li><p>Generate predictions for when the predicted latent variable is positive (<span class="math inline">\(y=1\)</span>) or negative (<span class="math inline">\(y=0\)</span>).</p></li>
+<li><p>Then, calculate the <strong>percent correctly predicted</strong></p></li>
+<li><p>If we convert these to probabilities by using the inverse normal or logit (<span class="math inline">\(\texttt{pnorm}\)</span> or <span class="math inline">\(\texttt{logit}\)</span>), then define the <span class="math inline">\(ePCP\)</span>, expected correctly predicted as:</p></li>
+</ul>
+<p><span class="math display">\[ePCP={1\over n}({\sum_{y=1} P_i+\sum_{y=0}(1-P_i)})\]</span></p>
+</section>
+<section id="chance" class="slide level2">
+<h2>Chance</h2>
+<ul>
+<li><p><strong>Percent Correctly Predicted</strong> is a good starting point</p></li>
+<li><p><span class="math inline">\(pr(Y=1) = 0.55\)</span></p></li>
+<li><p>versus, <span class="math inline">\(pr(Y=1) = 0.91\)</span></p></li>
+<li><p>We may be more confident in the latter</p></li>
+<li><p>Weight each prediction by its constituent probability</p></li>
+<li><p>We are accounting for our uncertainty. Typically, this number is somewhat lower than PCP</p></li>
+</ul>
+</section>
+<section id="reduction-in-error" class="slide level2">
+<h2>Reduction in Error</h2>
+<ul>
+<li><strong>Assume we estimate two models</strong></li>
+<li>A naive model and a model with the expected predictor</li>
+<li>The naive model predicts the outcome based on the modal category</li>
+<li><em>If 51% voted for the Republican, the model would predict a Republican vote with probability of 0.51. We should never really get less than 0.51 – if we do, then the naive model would be a superior model.</em></li>
+</ul>
+</section>
+<section id="chance-1" class="slide level2">
+<h2>Chance</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href=""></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-2"><a href=""></a><span class="fu">library</span>(MASS)</span>
+<span id="cb1-3"><a href=""></a><span class="fu">library</span>(pscl)</span>
+<span id="cb1-4"><a href=""></a><span class="fu">load</span>(<span class="st">"~/Dropbox/github_repos/teaching/POL683_Fall24/advancedRegression/vignettes/dataActive.rda"</span>)</span>
+<span id="cb1-5"><a href=""></a>dat <span class="ot">=</span> dataActive <span class="sc">%&gt;%</span> </span>
+<span id="cb1-6"><a href=""></a>  <span class="fu">mutate</span>(</span>
+<span id="cb1-7"><a href=""></a>    <span class="at">pid =</span> <span class="fu">recode</span>(pid3, <span class="st">"Democrat"</span> <span class="ot">=</span> <span class="dv">1</span>, <span class="st">"Independent"</span> <span class="ot">=</span> <span class="dv">2</span>, <span class="st">"Republican"</span> <span class="ot">=</span> <span class="dv">3</span>, <span class="st">"Other"</span> <span class="ot">=</span> <span class="dv">2</span>, <span class="st">"Not sure"</span> <span class="ot">=</span> <span class="dv">2</span>),</span>
+<span id="cb1-8"><a href=""></a>    <span class="at">protest =</span> <span class="fu">ifelse</span>(violent <span class="sc">&gt;</span> <span class="dv">4</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb1-9"><a href=""></a>  ) </span>
+<span id="cb1-10"><a href=""></a>my_model <span class="ot">=</span>  <span class="fu">glm</span>(protest <span class="sc">~</span> <span class="fu">as.factor</span>(pid),</span>
+<span id="cb1-11"><a href=""></a>       <span class="at">family=</span><span class="fu">binomial</span>(<span class="at">link=</span><span class="st">"logit"</span>), <span class="at">data =</span> dat)</span>
+<span id="cb1-12"><a href=""></a><span class="fu">hitmiss</span>(my_model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Classification Threshold = 0.5 
+        y=0 y=1
+yhat=0 3095 505
+yhat=1    0   0
+Percent Correctly Predicted = 85.97%
+Percent Correctly Predicted = 100%, for y = 0
+Percent Correctly Predicted = 0%  for y = 1
+Null Model Correctly Predicts 85.97%</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1]  85.97222 100.00000   0.00000</code></pre>
+</div>
+</div>
+</section>
+<section id="interpretation" class="slide level2">
+<h2>Interpretation</h2>
+<ul>
+<li><p>If we were to just estimate <span class="math inline">\(\theta\)</span>, that value would be the same as <span class="math inline">\(\texttt{plogis(a)}\)</span> from a regression model with no predictors</p></li>
+<li><p>The naive model is one that just assumes a single underlying <span class="math inline">\(\theta\)</span>, instead of <span class="math inline">\(\theta\)</span> being some linear composite of predictors. Then, we may construct a comparison</p></li>
+</ul>
+<p><span class="math display">\[PRE={{PCP-PMC}\over {1-PMC}}\]</span></p>
+<ul>
+<li>PRE is simply the proportional reduction in error.</li>
+</ul>
+</section>
+<section id="the-likelihood-ratio-test" class="slide level2">
+<h2>The Likelihood Ratio Test</h2>
+<ul>
+<li><p>How do we test <span class="math inline">\(H_0: \beta_{x_1}=\beta_{x_2}=0\)</span>?</p></li>
+<li><p>Similar to the joint F-test in the linear model, we can define a likelihood ratio test when we use MLE. Define two models:</p>
+<ol type="1">
+<li><p><span class="math inline">\(M_0:a\)</span></p></li>
+<li><p><span class="math inline">\(M_1: a+b_1x_x+b_2 x_2\)</span></p></li>
+</ol></li>
+<li><p>Let’s estimate the second model by maximizing the log likelihood function (<span class="math inline">\(loglik_{m1}\)</span>) and then estimate a second model where we constrain the two slopes to be 0. Then,</p></li>
+</ul>
+<p><span class="math display">\[G^2(M_0|M_1)=2 loglik_{m1}-2 loglik_{m0}\]</span></p>
+</section>
+<section id="an-example" class="slide level2">
+<h2>An Example</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href=""></a><span class="fu">library</span>(lmtest)</span>
+<span id="cb4-2"><a href=""></a><span class="fu">load</span>(<span class="st">"~/Dropbox/github_repos/teaching/POL683_Fall24/advancedRegression/vignettes/dataActive.rda"</span>)</span>
+<span id="cb4-3"><a href=""></a>dat <span class="ot">=</span> dataActive <span class="sc">%&gt;%</span> </span>
+<span id="cb4-4"><a href=""></a>  <span class="fu">mutate</span>(</span>
+<span id="cb4-5"><a href=""></a>    <span class="at">pid =</span> <span class="fu">recode</span>(pid3, <span class="st">"Democrat"</span> <span class="ot">=</span> <span class="dv">1</span>, <span class="st">"Independent"</span> <span class="ot">=</span> <span class="dv">2</span>, <span class="st">"Republican"</span> <span class="ot">=</span> <span class="dv">3</span>, <span class="st">"Other"</span> <span class="ot">=</span> <span class="dv">2</span>, <span class="st">"Not sure"</span> <span class="ot">=</span> <span class="dv">2</span>),</span>
+<span id="cb4-6"><a href=""></a>    <span class="at">protest =</span> <span class="fu">ifelse</span>(violent <span class="sc">&gt;</span> <span class="dv">4</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb4-7"><a href=""></a>  ) </span>
+<span id="cb4-8"><a href=""></a>a <span class="ot">=</span>  <span class="fu">glm</span>(protest <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb4-9"><a href=""></a>       <span class="at">family=</span><span class="fu">binomial</span>(<span class="at">link=</span><span class="st">"logit"</span>), <span class="at">data =</span> dat)</span>
+<span id="cb4-10"><a href=""></a></span>
+<span id="cb4-11"><a href=""></a>b <span class="ot">=</span>  <span class="fu">glm</span>(protest <span class="sc">~</span> <span class="fu">as.factor</span>(pid),</span>
+<span id="cb4-12"><a href=""></a>       <span class="at">family=</span><span class="fu">binomial</span>(<span class="at">link=</span><span class="st">"logit"</span>), <span class="at">data =</span> dat)</span>
+<span id="cb4-13"><a href=""></a></span>
+<span id="cb4-14"><a href=""></a><span class="fu">lrtest</span>(a, b)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Likelihood ratio test
+
+Model 1: protest ~ 1
+Model 2: protest ~ as.factor(pid)
+  #Df  LogLik Df  Chisq Pr(&gt;Chisq)    
+1   1 -1459.7                         
+2   3 -1412.5  2 94.323  &lt; 2.2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+</section>
+<section id="g2" class="slide level2">
+<h2><span class="math inline">\(G^2\)</span></h2>
+<ul>
+<li><p>The <span class="math inline">\(G^2\)</span> statistic is distributed <span class="math inline">\(\chi^2\)</span> with <span class="math inline">\(df=\)</span>number of constraints (here 2). Clearly, we can reject the null of no influence, see Long (1997, page 94)</p></li>
+<li><p>We could flip things, and instead of comparing our model to one with no predictors, we could compare our model to one with predictors equal to the number of data points.</p></li>
+</ul>
+</section>
+<section id="g2-and-deviance" class="slide level2">
+<h2><span class="math inline">\(G^2\)</span> and Deviance</h2>
+<p><span class="math display">\[G^2=2 loglik_{Full}-2 loglik_{M_1}\]</span></p>
+<p><span class="math display">\[Deviance=-2 loglik_{M_1}\]</span></p>
+<ul>
+<li>This is the <strong>deviance</strong>. It is just two times the log likelihood</li>
+</ul>
+</section>
+<section id="deviance" class="slide level2">
+<h2>Deviance</h2>
+<ul>
+<li>In particular, the <em>Null Deviance</em> is</li>
+</ul>
+<p><span class="math display">\[Null,Deviance=2loglik_{full}-2log_lik{Null}\]</span></p>
+<ul>
+<li>The <em>Residual Deviance</em></li>
+</ul>
+<p><span class="math display">\[Residual,Deviance=2loglik_{full}-2loglik_{My Model}\]</span></p>
+</section>
+<section id="the-wald-test" class="slide level2">
+<h2>The Wald Test</h2>
+<ul>
+<li>The Wald Test is asymptotically equal to the LR test</li>
+</ul>
+<p><span class="math display">\[Qb=r\]</span></p>
+<ul>
+<li><p>Let’s assume one variable, so we estimate a slope and an intercept. Our <span class="math inline">\(b\)</span> vector is length 2</p></li>
+<li><p>Let’s test the constraint that <span class="math inline">\(b=0\)</span>, then declare <span class="math inline">\(Q=(0,1)\)</span> and <span class="math inline">\(r=0\)</span>. The Wald statistic is</p></li>
+</ul>
+<p><span class="math display">\[W=(Qb-r)^T(Qvar(b)Q^T)^{-1}(Qb-r)\]</span></p>
+</section>
+<section id="deconstructing-the-wald-test" class="slide level2">
+<h2>Deconstructing the Wald Test</h2>
+<p><span class="math display">\[W=(Qb-r)^T(Qvar(b)Q^T)^{-1}(Qb-r)\]</span></p>
+<ul>
+<li><p>The left and rightmost portions estimate the distance between the actual value of <span class="math inline">\(b\)</span> and 0 – regardless of the complexity</p></li>
+<li><p>The freed model relative to the constrained model</p></li>
+<li><p>Because there is uncertainty around the estimates, this is represented in the middle portion. Again, we multiple by Q because we are only concerned about <span class="math inline">\(b\)</span></p></li>
+</ul>
+</section>
+<section id="warning" class="slide level2">
+<h2>Warning</h2>
+<ul>
+<li><p>The Wald and LR tests are reasonable approaches, but</p></li>
+<li><p>Their small sample properties are somewhat unknown</p></li>
+<li><p><strong>They should only be used if the <span class="math inline">\(\textit{null}\)</span> model consists of the same data.</strong></p></li>
+<li><p>These methods can really only be used for nested model. In the case above, <span class="math inline">\(b=0\)</span> is a constraint, so the restricted/constrained model is nested in the unrestricted model.</p></li>
+</ul>
+</section>
+<section id="scalar-estimates-fit" class="slide level2">
+<h2>Scalar Estimates Fit</h2>
+<ul>
+<li>Scalar estimates of model fit are not incredibly meaningful in the logit/probit framework. Recall,</li>
+</ul>
+<p><span class="math display">\[R^2={RegSS\over TSS}=1-{RSS/TSS}\]</span></p>
+<ul>
+<li>The problem is that in the logit/probit model, we cannot directly compare <span class="math inline">\(Y_{obs}\)</span> to the prediction we make with respect to <span class="math inline">\(Y_{latent}\)</span></li>
+</ul>
+</section>
+<section id="scalar-estimates-fit-1" class="slide level2">
+<h2>Scalar Estimates Fit</h2>
+<ul>
+<li>Nonetheless, let’s define the Efron (1978) measure of <em>pseudo-</em><span class="math inline">\(R^2\)</span> as,</li>
+</ul>
+<p><span class="math display">\[Pseudo-R^2={1-{\sum (y-\hat{y_{latent}})^2}\over {\sum (y-\bar{y})^2)}}\]</span></p>
+</section>
+<section id="information-measures" class="slide level2">
+<h2>Information Measures</h2>
+<ul>
+<li>The Akaike Information Criterion (AIC) is defined as:</li>
+</ul>
+<p><span class="math display">\[AIC={{-2loglik(\theta)+2P}\over N}\]</span></p>
+</section>
+<section id="information-measures-1" class="slide level2">
+<h2>Information Measures</h2>
+<ul>
+<li><p>Calculate the <span class="math inline">\(-2loglik\)</span> and add 2 <span class="math inline">\(\times\)</span> the number of predictors, where <span class="math inline">\(p=K+1\)</span> (Long 1997, 109)</p></li>
+<li><p>Finally, divide by the number of observations. Notice what happens with this function. As the number of parameters increases, but the log-likelihood stays the same, the AIC will increase</p></li>
+<li><p>We should prefer a AIC. The statistic penalizes for added parameters that do not improve fit</p></li>
+</ul>
+</section>
+<section id="bic" class="slide level2">
+<h2>BIC</h2>
+<ul>
+<li>The <em>Bayesian Information Criterion (BIC)</em> is based on a comparision – between a fully saturated model and the proposed model. The BIC is:</li>
+</ul>
+<p><span class="math display">\[BIC=D(M)-df ln N\]</span></p>
+<ul>
+<li><p><span class="math inline">\(D(M)\)</span> is simply the deviance for the model</p></li>
+<li><p>The degrees of freedom calculation is <span class="math inline">\(N-k-1\)</span>, where <span class="math inline">\(k\)</span> is the number of predictors.</p></li>
+</ul>
+</section>
+<section id="the-ordered-logit" class="slide level2">
+<h2>The Ordered Logit</h2>
+<ul>
+<li><p>This summary follows your assigned reading in Long (1997)</p></li>
+<li><p>Only use an ordered parameterization when we have ordered data.</p></li>
+<li><p>Some data can be ordered, even if they are theoretically multidimensional; others should be modeled differently</p></li>
+<li><p>Examples: PID, Ideology (social and economic dimensions)</p></li>
+<li><p>“How much do you agree or disagree with the following item?” from “1” Strongly Disagree to “5” Strongly Agree.</p></li>
+</ul>
+</section>
+<section id="why-not-ols" class="slide level2">
+<h2>Why not OLS?</h2>
+<ul>
+<li>Ordered, non-interval level data may violate the assumptions of the classical linear regression model.</li>
+</ul>
+<ol type="1">
+<li><p>Non-constant variance.</p></li>
+<li><p>Predictions may be non-sensical (i.e., we predict things outside of the observed bounds).</p></li>
+<li><p>If the category distances are theoretically quite different.</p></li>
+</ol>
+</section>
+<section id="probit-or-logit" class="slide level2">
+<h2>Probit or Logit</h2>
+<ul>
+<li><p>Ordered logit or probit is a manner of personal preference.</p></li>
+<li><p>The ordered logit and the proportional odds assumption.</p></li>
+<li><p><span class="math inline">\(y_{latent}\)</span>, where <span class="math inline">\(y_{obs} \in (1,2,3,...k)\)</span>.</p></li>
+</ul>
+</section>
+<section id="the-latent-variable-approach" class="slide level2">
+<h2>The Latent Variable Approach</h2>
+<ul>
+<li><p>Instead of the variable being 0/1, it is not more than two categories that are ordered. Assume we knew <span class="math inline">\(y_{latent}\)</span> and would like to map that to observing a particular category.</p></li>
+<li><p>Using the same logic from the binary regression model, assume that we observe the category based on its orientation to a series of cutpoints, where</p></li>
+</ul>
+<p><span class="math display">\[y_i=m: \tau_{k-1}\leq y_{latent} &lt; \tau_{k}\]</span></p>
+</section>
+<section id="the-measurement-model" class="slide level2">
+<h2>The Measurement Model</h2>
+<ul>
+<li><p>The <span class="math inline">\(\tau\)</span> parameters represent a series of thresholds that map the latent variable onto the categorical variable.</p></li>
+<li><p>In <span class="math inline">\(\texttt{MASS}::\texttt{polr}()\)</span> these are “zeta”</p></li>
+<li><p>A (Long 1997, 123)</p></li>
+</ul>
+<p><span class="math display">\[y_{obs} =
+  \begin{array}{lr}
+    A, \tau_0=\infty \leq y_{latent}&lt;\tau_1\\
+    B, \tau_1\leq y_{latent}&lt;\tau_2\\
+    C, \tau_2\leq y_{latent}&lt;\tau_3\\
+    D, \tau_3\leq y_{latent}&lt;\tau_4\\
+    E, \tau_4\leq y_{latent}&lt;\tau_5=\infty
+  \end{array}
+\]</span></p>
+</section>
+<section id="the-structural-model" class="slide level2">
+<h2>The Structural Model</h2>
+<p><span class="math display">\[y_{latent}=\beta_0 + \beta_1x_i +...\sum^{J}_{j =1} \beta_j x_{ij}+e_i\]</span></p>
+<p><span class="math display">\[y=X\beta+e\]</span></p>
+<ul>
+<li>Where each row vector of X is a 1 (for the intercept) and any <span class="math inline">\(j+1\)</span> predictors.</li>
+</ul>
+</section>
+<section id="cutpoints" class="slide level2">
+<h2>Cutpoints</h2>
+<p>So what we’re doing is defining <span class="math inline">\(K-1\)</span> cutpoints, the slicing up the latent distribution into discrete categories.</p>
+<p><span class="math display">\[\begin{eqnarray*}
+pr(y_{i}=1|X_i) &amp; = &amp; pr(\tau_0 \leq y_{i,latent}&lt;\tau_1)|X_i) \\
+             &amp; = &amp;  pr(\tau_0 \leq X_i b+e_i&lt;\tau_1)|X_i) \\
+             &amp; = &amp;  pr(\tau_0 - X_ib \leq e_i&lt;\tau_1-X_ib)|X_i) \\
+             &amp; = &amp;  pr(\tau_1-X_ib)|X_i)-pr(\tau_0 - X_ib|X_i) \\
+             &amp; = &amp;  F(\tau_1-X_ib)-F(\tau_0 - X_ib) \\
+\end{eqnarray*}\]</span></p>
+</section>
+<section id="cutpoints-1" class="slide level2">
+<h2>Cutpoints</h2>
+<ul>
+<li><p>If F denotes the CDF, then for the ordered probit:</p></li>
+<li><p>The last row is simplified because the probability of the CDF evaluated from <span class="math inline">\(-\infty\)</span> to <span class="math inline">\(\infty\)</span> is 1, so the first term becomes 1. Any CDF is plausible, such as the logit, in which case we have,</p></li>
+</ul>
+<p><span class="math display">\[\begin{eqnarray*}
+Pr(y_{i}=k|X_i) &amp; = &amp;\Phi(\tau_1-\alpha-\beta X) \\
+             &amp; = &amp;  \Phi(\tau_2-\alpha-\beta X)-\Phi(\tau_1-\alpha-\beta X) \\
+             &amp; = &amp;  \Phi(\tau_3-\alpha-\beta X)-\Phi(\tau_2-\alpha-\beta X)\\
+             &amp; = &amp;  1-\Phi(\tau_4-\alpha-\beta X)\\
+\end{eqnarray*}\]</span></p>
+</section>
+<section id="the-ordered-logit-1" class="slide level2">
+<h2>The Ordered Logit</h2>
+<p><span class="math display">\[\begin{eqnarray*}
+Pr(y_{i}=k|X_i) &amp; = &amp;Logit(\tau_1-\alpha-\beta X) \\
+                &amp; = &amp;  Logit(\tau_2-\alpha-\beta X)-Logit(\tau_1-\alpha-\beta X) \\
+                &amp; = &amp;  Logit(\tau_3-\alpha-\beta X)-Logit(\tau_2-\alpha-\beta X)\\
+             &amp; = &amp;  1-Logit(\tau_4-\alpha-\beta X)\\
+\end{eqnarray*}\]</span></p>
+<ul>
+<li><span class="math inline">\(F\)</span> generically to mean the CDF; and <span class="math inline">\(f\)</span> to denote the PDF.</li>
+</ul>
+</section>
+<section id="the-likelihood" class="slide level2">
+<h2>The Likelihood</h2>
+<ul>
+<li>Recall, that the probability of being in the <span class="math inline">\(k\)</span>th category for the <span class="math inline">\(i\)</span>th subject is,</li>
+</ul>
+<p><span class="math display">\[\begin{eqnarray*}
+pr(y_{i}=k|X_i) &amp; = &amp; F(\tau_k-\alpha-X_i\beta)-F(\tau_{k-1}-\alpha-X_i\beta) \\
+\end{eqnarray*}\]</span></p>
+</section>
+<section id="the-likelihood-1" class="slide level2">
+<h2>The Likelihood</h2>
+<p><span class="math display">\[Pr(y_{i}=1|X_i)\times pr(y_{i}=2|X_i) \times pr(y_{i}=3|X_i) \times....pr(y_{i}=K|X_i)\]</span>.</p>
+<p>This is just the joint probability for category membership, for each subject, so</p>
+<p><span class="math display">\[\begin{eqnarray*}
+Pr(y_{i}|X_i) &amp; = &amp; \prod_{k=1}^K F(\tau_k-\alpha-X_i\beta)-F(\tau_{k-1}-\alpha-X_i\beta) \\
+\end{eqnarray*}\]</span></p>
+</section>
+<section id="the-likelihood-2" class="slide level2">
+<h2>The Likelihood</h2>
+<ul>
+<li>This only refers to the probability space for a single subject. Since the likelihood is <span class="math inline">\(\prod_{i=1}^N p_i\)</span>, we need to calculate the joint probability for each subject, which is,</li>
+</ul>
+<p><span class="math display">\[\begin{eqnarray*}
+pr(y|X) &amp; = &amp; \prod_{i=1}^N \prod_{k=1}^K F(\tau_k-\alpha-X_i\beta)-F(\tau_{k-1}-\alpha-X_i\beta) \\
+L(\beta \tau | y, X)&amp; = &amp; \prod_{i=1}^N \prod_{k=1}^K F(\tau_k-\alpha-X_i\beta)-F(\tau_{k-1}-\alpha-X_i\beta) \\
+\end{eqnarray*}\]</span></p>
+</section>
+<section id="the-log-likelihood" class="slide level2">
+<h2>The Log Likelihood</h2>
+<p><span class="math display">\[\begin{eqnarray*}
+Loglik(\beta \tau | y, X)&amp; = &amp; \sum_{i=1}^N \sum_{k=1}^K log[F(\tau_k-\alpha-X_i\beta)-F(\tau_{k-1}-\alpha-X_i\beta)] \\
+\end{eqnarray*}\]</span></p>
+<ul>
+<li><p>Like the binary case: <span class="math inline">\(x \rightarrow y_{latent} \rightarrow y_{obs}\)</span>.</p></li>
+<li><p>The only thing that is different is that instead of a single cutpoint – at 0 – we have a series of cutpoints.</p></li>
+</ul>
+</section>
+<section id="parallel-lines" class="slide level2">
+<h2>Parallel Lines</h2>
+<div class="cell">
+<div class="cell-output-display">
+<div class="plotly html-widget html-fill-item" id="htmlwidget-d72a6ad388e4a1c18e67" style="width:960px;height:480px;"></div>
+<script type="application/json" data-for="htmlwidget-d72a6ad388e4a1c18e67">{"x":{"visdat":{"53483bddf754":["function () ","plotlyVisDat"]},"cur_data":"53483bddf754","attrs":{"53483bddf754":{"x":{},"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"y":{},"type":"scatter","mode":"lines","name":"Line 1","inherit":true},"53483bddf754.1":{"x":{},"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"y":{},"type":"scatter","mode":"lines","name":"Line 2","inherit":true},"53483bddf754.2":{"x":{},"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"y":{},"type":"scatter","mode":"lines","name":"Line 3","inherit":true}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"title":"Parallel Lines using Logit Function","xaxis":{"domain":[0,1],"automargin":true,"title":"X-axis"},"yaxis":{"domain":[0,1],"automargin":true,"title":"Y-axis"},"hovermode":"closest","showlegend":true},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"x":[-10,-9.7979797979797976,-9.5959595959595951,-9.3939393939393945,-9.191919191919192,-8.9898989898989896,-8.7878787878787872,-8.5858585858585865,-8.3838383838383841,-8.1818181818181817,-7.9797979797979792,-7.7777777777777777,-7.5757575757575761,-7.3737373737373737,-7.1717171717171713,-6.9696969696969697,-6.7676767676767682,-6.5656565656565657,-6.3636363636363633,-6.1616161616161618,-5.9595959595959593,-5.7575757575757578,-5.5555555555555554,-5.3535353535353538,-5.1515151515151514,-4.9494949494949498,-4.7474747474747474,-4.5454545454545459,-4.3434343434343434,-4.1414141414141419,-3.9393939393939394,-3.7373737373737379,-3.5353535353535355,-3.333333333333333,-3.1313131313131315,-2.9292929292929291,-2.7272727272727275,-2.5252525252525251,-2.3232323232323235,-2.1212121212121211,-1.9191919191919187,-1.717171717171718,-1.5151515151515156,-1.3131313131313131,-1.1111111111111107,-0.90909090909091006,-0.70707070707070763,-0.50505050505050519,-0.30303030303030276,-0.10101010101010033,0.10101010101010033,0.30303030303030276,0.50505050505050519,0.70707070707070763,0.90909090909090828,1.1111111111111107,1.3131313131313131,1.5151515151515156,1.7171717171717162,1.9191919191919187,2.1212121212121211,2.3232323232323235,2.5252525252525242,2.7272727272727266,2.9292929292929291,3.1313131313131315,3.3333333333333339,3.5353535353535346,3.737373737373737,3.9393939393939394,4.1414141414141419,4.3434343434343425,4.545454545454545,4.7474747474747474,4.9494949494949498,5.1515151515151505,5.3535353535353529,5.5555555555555554,5.7575757575757578,5.9595959595959584,6.1616161616161627,6.3636363636363633,6.565656565656564,6.7676767676767682,6.9696969696969688,7.171717171717173,7.3737373737373737,7.5757575757575744,7.7777777777777786,7.9797979797979792,8.1818181818181799,8.3838383838383841,8.5858585858585847,8.787878787878789,8.9898989898989896,9.1919191919191903,9.3939393939393945,9.5959595959595951,9.7979797979797993,10],"y":[0.00012339457598623172,0.00015101508515221734,0.00018481699660097167,0.0002261831242174684,0.00027680534191564633,0.00033875351792465749,0.0004145597543996538,0.00050732129563597168,0.00062082618979176249,0.00075970665671569991,0.0009296261533112874,0.0011375073648176831,0.0013918098129428744,0.0017028674854477161,0.0020832988757500926,0.0025485040812767627,0.0031172661270996932,0.0038124763968195603,0.0046620068384419277,0.005699754236697001,0.0069668839124894313,0.0085133010953921378,0.010399376944046072,0.012697951308046244,0.015496623724768321,0.018900324865165012,0.023034128681885445,0.028046215717659716,0.034110824206964062,0.041430921089968611,0.050240184162147719,0.060803707411619681,0.073416630912783026,0.08839967720705845,0.10609039614320445,0.12682886280844469,0.15093676035290007,0.1786893601788383,0.21028102179531874,0.24578651673774468,0.28512257494140081,0.3280160938691386,0.37398666873187658,0.42235060544315989,0.47225076494548685,0.52271163326063885,0.57271312061666191,0.62127171177032281,0.667515572897731,0.7107418823348397,0.75044932025243094,0.78634453633237078,0.81832653327149996,0.84645595535434559,0.87091698177216548,0.89197843865658066,0.90995874532806176,0.9251971950590383,0.93803233576844613,0.94878704852348061,0.95775929347237487,0.96521727323003037,0.97139780272451681,0.97650684659159426,0.98072140337342339,0.98419212870157624,0.9870462724693041,0.98939064973302637,0.99131447301382447,0.99289195026498278,0.99418460467693726,0.99524330598414024,0.99611002328723364,0.99681932072294288,0.99739962265992965,0.99787427665613715,0.99826244169307798,0.99857982721861327,0.99883930594064763,0.99905142053196805,0.99922480167688987,0.99936651234921592,0.99948233092373762,0.99957698371187842,0.99965433577209895,0.99971754735909768,0.99976920211756359,0.9998114120688274,0.9998459035551166,0.99987408757094653,0.99989711730166231,0.9999159351852247,0.99993131139762681,0.99994387532003681,0.99995414126430382,0.99996252950231868,0.99996938345506448,0.99997498374170146,0.99997955966163143,0.99998329857815205],"type":"scatter","mode":"lines","name":"Line 1","marker":{"color":"rgba(31,119,180,1)","line":{"color":"rgba(31,119,180,1)"}},"error_y":{"color":"rgba(31,119,180,1)"},"error_x":{"color":"rgba(31,119,180,1)"},"line":{"color":"rgba(31,119,180,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":[-10,-9.7979797979797976,-9.5959595959595951,-9.3939393939393945,-9.191919191919192,-8.9898989898989896,-8.7878787878787872,-8.5858585858585865,-8.3838383838383841,-8.1818181818181817,-7.9797979797979792,-7.7777777777777777,-7.5757575757575761,-7.3737373737373737,-7.1717171717171713,-6.9696969696969697,-6.7676767676767682,-6.5656565656565657,-6.3636363636363633,-6.1616161616161618,-5.9595959595959593,-5.7575757575757578,-5.5555555555555554,-5.3535353535353538,-5.1515151515151514,-4.9494949494949498,-4.7474747474747474,-4.5454545454545459,-4.3434343434343434,-4.1414141414141419,-3.9393939393939394,-3.7373737373737379,-3.5353535353535355,-3.333333333333333,-3.1313131313131315,-2.9292929292929291,-2.7272727272727275,-2.5252525252525251,-2.3232323232323235,-2.1212121212121211,-1.9191919191919187,-1.717171717171718,-1.5151515151515156,-1.3131313131313131,-1.1111111111111107,-0.90909090909091006,-0.70707070707070763,-0.50505050505050519,-0.30303030303030276,-0.10101010101010033,0.10101010101010033,0.30303030303030276,0.50505050505050519,0.70707070707070763,0.90909090909090828,1.1111111111111107,1.3131313131313131,1.5151515151515156,1.7171717171717162,1.9191919191919187,2.1212121212121211,2.3232323232323235,2.5252525252525242,2.7272727272727266,2.9292929292929291,3.1313131313131315,3.3333333333333339,3.5353535353535346,3.737373737373737,3.9393939393939394,4.1414141414141419,4.3434343434343425,4.545454545454545,4.7474747474747474,4.9494949494949498,5.1515151515151505,5.3535353535353529,5.5555555555555554,5.7575757575757578,5.9595959595959584,6.1616161616161627,6.3636363636363633,6.565656565656564,6.7676767676767682,6.9696969696969688,7.171717171717173,7.3737373737373737,7.5757575757575744,7.7777777777777786,7.9797979797979792,8.1818181818181799,8.3838383838383841,8.5858585858585847,8.787878787878789,8.9898989898989896,9.1919191919191903,9.3939393939393945,9.5959595959595951,9.7979797979797993,10],"y":[0.00091105119440064539,0.0011147833441199496,0.0013640125215336391,0.0016688681177159336,0.0020417193684422754,0.0024976630175477898,0.0030551133692573265,0.0037365143339650763,0.0045691958590474528,0.0055863997907026151,0.006828502361184376,0.0083444615365500519,0.010193516460848633,0.012447161795007164,0.015191409838007068,0.018529335068062151,0.022583865261700569,0.027500735600776583,0.033451451055118181,0.040636001172127081,0.049284934325518837,0.059660223019174806,0.072054143618564021,0.086785173649676403,0.10418972279494806,0.12460843924642248,0.14836598933874684,0.17574374289308001,0.20694584934715762,0.24206081755024075,0.28102278025633637,0.32357870183457932,0.36926912882296675,0.41742979353768545,0.46721880785976294,0.51766940678843576,0.56776232353834344,0.61650680270111735,0.66301689495897198,0.70657097684341297,0.74664687466621982,0.78293082812505821,0.81530379900906558,0.84381191773073183,0.86862879046919328,0.89001644553267256,0.90828975065421802,0.92378700149102944,0.93684759571234577,0.9477964814295412,0.95693439151148441,0.96453262175983989,0.97083113028529056,0.97603889875903294,0.98033571260902796,0.98387473215452137,0.98678541307709944,0.98917648321794316,0.99113879409567307,0.9927479449724177,0.99406663137424311,0.99514670505046499,0.99603095381574691,0.99675462178723284,0.9973466963609805,0.99783099013049426,0.99822704540520779,0.99855088709473039,0.99881564717414228,0.99903208116946851,0.99920899436004507,0.99935359283064562,0.99947177219203265,0.99956835474925843,0.99964728413056281,0.99971178487883849,0.99976449322775529,0.9998075642083728,0.99984275933223121,0.99987151834795962,0.99989501794731028,0.9999142197828611,0.99992990973582507,0.99994273002335099,0.99995320544768507,0.99996176485379396,0.9999687586686028,0.99997447323638955,0.9999791425349005,0.99998295775032675,0.99998607510213466,0.99998862223745688,0.99999070345639673,0.99999240398191336,0.99999379344891082,0.99999492875527785,0.99999585639152544,0.9999966143443636,0.9999972336521249,0.99999773967570205],"type":"scatter","mode":"lines","name":"Line 2","marker":{"color":"rgba(255,127,14,1)","line":{"color":"rgba(255,127,14,1)"}},"error_y":{"color":"rgba(255,127,14,1)"},"error_x":{"color":"rgba(255,127,14,1)"},"line":{"color":"rgba(255,127,14,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":[-10,-9.7979797979797976,-9.5959595959595951,-9.3939393939393945,-9.191919191919192,-8.9898989898989896,-8.7878787878787872,-8.5858585858585865,-8.3838383838383841,-8.1818181818181817,-7.9797979797979792,-7.7777777777777777,-7.5757575757575761,-7.3737373737373737,-7.1717171717171713,-6.9696969696969697,-6.7676767676767682,-6.5656565656565657,-6.3636363636363633,-6.1616161616161618,-5.9595959595959593,-5.7575757575757578,-5.5555555555555554,-5.3535353535353538,-5.1515151515151514,-4.9494949494949498,-4.7474747474747474,-4.5454545454545459,-4.3434343434343434,-4.1414141414141419,-3.9393939393939394,-3.7373737373737379,-3.5353535353535355,-3.333333333333333,-3.1313131313131315,-2.9292929292929291,-2.7272727272727275,-2.5252525252525251,-2.3232323232323235,-2.1212121212121211,-1.9191919191919187,-1.717171717171718,-1.5151515151515156,-1.3131313131313131,-1.1111111111111107,-0.90909090909091006,-0.70707070707070763,-0.50505050505050519,-0.30303030303030276,-0.10101010101010033,0.10101010101010033,0.30303030303030276,0.50505050505050519,0.70707070707070763,0.90909090909090828,1.1111111111111107,1.3131313131313131,1.5151515151515156,1.7171717171717162,1.9191919191919187,2.1212121212121211,2.3232323232323235,2.5252525252525242,2.7272727272727266,2.9292929292929291,3.1313131313131315,3.3333333333333339,3.5353535353535346,3.737373737373737,3.9393939393939394,4.1414141414141419,4.3434343434343425,4.545454545454545,4.7474747474747474,4.9494949494949498,5.1515151515151505,5.3535353535353529,5.5555555555555554,5.7575757575757578,5.9595959595959584,6.1616161616161627,6.3636363636363633,6.565656565656564,6.7676767676767682,6.9696969696969688,7.171717171717173,7.3737373737373737,7.5757575757575744,7.7777777777777786,7.9797979797979792,8.1818181818181799,8.3838383838383841,8.5858585858585847,8.787878787878789,8.9898989898989896,9.1919191919191903,9.3939393939393945,9.5959595959595951,9.7979797979797993,10],"y":[0.0066928509242848554,0.0081789428562821613,0.0099916899362080588,0.012201264260636075,0.014892116363260341,0.018165492507155691,0.022142203958132146,0.026965570368090212,0.032804390909942818,0.039855698945889695,0.048346922719897809,0.058536902874367899,0.070715012027143642,0.085197401061588379,0.10231920350807022,0.12242143898621305,0.14583148353491501,0.17283646446618905,0.2036499335022193,0.23837374421039675,0.27695909778815886,0.31917282672147035,0.36457644074163931,0.41252537040181819,0.46219351092684902,0.51262357943007497,0.56279795369438246,0.61171941140716124,0.65848848940252069,0.70236511502557752,0.74280634723561778,0.7794778729544305,0.81224231094517951,0.8411308951190849,0.86630626410614642,0.88802329038025296,0.90659299528316784,0.92235245391657517,0.9356417590466013,0.94678782922608895,0.95609411885006113,0.96383499877981238,0.97025357461592576,0.97556186338166717,0.97994246346214953,0.98355106930658209,0.98651937229915421,0.98895804166250523,0.99095959419106694,0.99260104395028037,0.99394627939345837,0.99504815206560837,0.99595028367562977,0.99668861116732732,0.9972926957603816,0.99778682410771702,0.99819092935635756,0.99852135810545573,0.99879150674754447,0.99901234791145366,0.99919286497151605,0.9993404100018195,0.99946099821337242,0.99955954984498185,0.99964008868547005,0.99970590486945987,0.99975968828718109,0.99980363785338222,0.99983955096412114,0.99986889670726231,0.99989287575955066,0.99991246937955591,0.99992847947371377,0.9999415613567707,0.99995225053522985,0.99996098460193872,0.99996812113264033,0.99997395231349717,0.99997871689603068,0.99998260996730992,0.9999857909343467,0.99998839004889428,0.99999051373933501,0.99999224896766326,0.99999366678975676,0.99999482526457883,0.99999577183134991,0.99999654525196324,0.99999717719814474,0.99999769354832591,0.99999811544731265,0.9999984601721349,0.99999874183952464,0.99999897198398868,0.99999916003014266,0.99999931367864969,0.99999943922156442,0.99999954179999417,0.99999962561463129,0.99999969409777301],"type":"scatter","mode":"lines","name":"Line 3","marker":{"color":"rgba(44,160,44,1)","line":{"color":"rgba(44,160,44,1)"}},"error_y":{"color":"rgba(44,160,44,1)"},"error_x":{"color":"rgba(44,160,44,1)"},"line":{"color":"rgba(44,160,44,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+</section>
+<section id="estimation" class="slide level2">
+<h2>Estimation</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href=""></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb6-2"><a href=""></a><span class="fu">library</span>(MASS)</span>
+<span id="cb6-3"><a href=""></a></span>
+<span id="cb6-4"><a href=""></a><span class="fu">load</span>(<span class="st">"~/Dropbox/github_repos/teaching/POL683_Fall24/advancedRegression/vignettes/dataActive.rda"</span>)</span>
+<span id="cb6-5"><a href=""></a>dat <span class="ot">=</span> dataActive <span class="sc">%&gt;%</span> </span>
+<span id="cb6-6"><a href=""></a>  <span class="fu">mutate</span>(</span>
+<span id="cb6-7"><a href=""></a>    <span class="at">pid =</span> <span class="fu">recode</span>(pid3, <span class="st">"Democrat"</span> <span class="ot">=</span> <span class="dv">1</span>, <span class="st">"Independent"</span> <span class="ot">=</span> <span class="dv">2</span>, <span class="st">"Republican"</span> <span class="ot">=</span> <span class="dv">3</span>, <span class="st">"Other"</span> <span class="ot">=</span> <span class="dv">2</span>, <span class="st">"Not sure"</span> <span class="ot">=</span> <span class="dv">2</span>),</span>
+<span id="cb6-8"><a href=""></a>    <span class="at">ideo =</span> <span class="fu">ifelse</span>(ideo5 <span class="sc">==</span> <span class="st">"Very liberal"</span>, <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb6-9"><a href=""></a>    <span class="at">liberal =</span> <span class="fu">ifelse</span>(ideo5 <span class="sc">==</span> <span class="st">"Liberal"</span> <span class="sc">|</span> ideo5 <span class="sc">==</span> <span class="st">"Very liberal"</span>, <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb6-10"><a href=""></a>    <span class="at">independent =</span> <span class="fu">ifelse</span>(ideo5 <span class="sc">==</span> <span class="st">"Moderate"</span>, <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb6-11"><a href=""></a>    <span class="at">conservative =</span> <span class="fu">ifelse</span>(ideo5 <span class="sc">==</span> <span class="st">"Conservative"</span> <span class="sc">|</span> ideo5 <span class="sc">==</span> <span class="st">"Very conservative"</span>, <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb6-12"><a href=""></a>    <span class="at">int1 =</span> conservative<span class="sc">*</span>authoritarianism,</span>
+<span id="cb6-13"><a href=""></a>    <span class="at">int2 =</span> independent<span class="sc">*</span>authoritarianism,</span>
+<span id="cb6-14"><a href=""></a>  ) </span>
+<span id="cb6-15"><a href=""></a>my_model <span class="ot">=</span> <span class="fu">polr</span>(<span class="fu">as.factor</span>(pid) <span class="sc">~</span> conservative <span class="sc">+</span> independent <span class="sc">+</span> authoritarianism <span class="sc">+</span></span>
+<span id="cb6-16"><a href=""></a>                  int1 <span class="sc">+</span> int2, <span class="at">data =</span> dat)</span>
+<span id="cb6-17"><a href=""></a><span class="fu">summary</span>(my_model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call:
+polr(formula = as.factor(pid) ~ conservative + independent + 
+    authoritarianism + int1 + int2, data = dat)
+
+Coefficients:
+                  Value Std. Error t value
+conservative      3.683     0.1673  22.022
+independent       1.543     0.1210  12.755
+authoritarianism  1.177     0.1532   7.687
+int1             -1.220     0.2653  -4.600
+int2             -1.582     0.2272  -6.965
+
+Intercepts:
+    Value   Std. Error t value
+1|2  0.6430  0.0769     8.3661
+2|3  3.1383  0.0965    32.5227
+
+Residual Deviance: 6335.462 
+AIC: 6349.462 
+(2 observations deleted due to missingness)</code></pre>
+</div>
+</div>
+</section>
+<section id="interpretation-1" class="slide level2">
+<h2>Interpretation</h2>
+<ul>
+<li><p>How do we make sense of this?</p></li>
+<li><p>Follow the same protocol as before.</p></li>
+<li><p>Simulate data, generate predictions, and interpret the results.</p></li>
+</ul>
+</section>
+<section id="simulating-data-generating-predictions" class="slide level2">
+<h2>Simulating Data, Generating Predictions</h2>
+
+<img data-src="ordered_logit_files/figure-revealjs/unnamed-chunk-5-1.png" width="960" class="r-stretch"><div class="quarto-auto-generated-content">
+<div class="footer footer-default">
+
+</div>
+</div>
+</section>
+    </div>
+  </div>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script>
+  <script src="ordered_logit_files/libs/revealjs/dist/reveal.js"></script>
+  <!-- reveal.js plugins -->
+  <script src="ordered_logit_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
+  <script src="ordered_logit_files/libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
+  <script src="ordered_logit_files/libs/revealjs/plugin/reveal-menu/menu.js"></script>
+  <script src="ordered_logit_files/libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
+  <script src="ordered_logit_files/libs/revealjs/plugin/quarto-support/support.js"></script>
+  
+
+  <script src="ordered_logit_files/libs/revealjs/plugin/notes/notes.js"></script>
+  <script src="ordered_logit_files/libs/revealjs/plugin/search/search.js"></script>
+  <script src="ordered_logit_files/libs/revealjs/plugin/zoom/zoom.js"></script>
+  <script src="ordered_logit_files/libs/revealjs/plugin/math/math.js"></script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+'controlsAuto': true,
+'previewLinksAuto': false,
+'pdfSeparateFragments': false,
+'autoAnimateEasing': "ease",
+'autoAnimateDuration': 1,
+'autoAnimateUnmatched': true,
+'menu': {"side":"left","useTextContentForMissingTitles":true,"markers":false,"loadIcons":false,"custom":[{"title":"Tools","icon":"<i class=\"fas fa-gear\"></i>","content":"<ul class=\"slide-menu-items\">\n<li class=\"slide-tool-item active\" data-item=\"0\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.fullscreen(event)\"><kbd>f</kbd> Fullscreen</a></li>\n<li class=\"slide-tool-item\" data-item=\"1\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.speakerMode(event)\"><kbd>s</kbd> Speaker View</a></li>\n<li class=\"slide-tool-item\" data-item=\"2\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.overview(event)\"><kbd>o</kbd> Slide Overview</a></li>\n<li class=\"slide-tool-item\" data-item=\"3\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.togglePdfExport(event)\"><kbd>e</kbd> PDF Export Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"4\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.keyboardHelp(event)\"><kbd>?</kbd> Keyboard Help</a></li>\n</ul>"}],"openButton":true},
+'smaller': false,
+ 
+        // Display controls in the bottom right corner
+        controls: false,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: false,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'edges',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: false,
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: true,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: false,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'linear',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: false,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'none',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'none',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // The "normal" size of the presentation, aspect ratio will be preserved
+        // when the presentation is scaled to fit different resolutions. Can be
+        // specified using percentage units.
+        width: 1050,
+
+        height: 700,
+
+        // Factor of the display size that should remain empty around the content
+        margin: 0.1,
+
+        math: {
+          mathjax: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js',
+          config: 'TeX-AMS_HTML-full',
+          tex2jax: {
+            inlineMath: [['\\(','\\)']],
+            displayMath: [['\\[','\\]']],
+            balanceBraces: true,
+            processEscapes: false,
+            processRefs: true,
+            processEnvironments: true,
+            preview: 'TeX',
+            skipTags: ['script','noscript','style','textarea','pre','code'],
+            ignoreClass: 'tex2jax_ignore',
+            processClass: 'tex2jax_process'
+          },
+        },
+
+        // reveal.js plugins
+        plugins: [QuartoLineHighlight, PdfExport, RevealMenu, QuartoSupport,
+
+          RevealMath,
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    
+    <script>
+      // htmlwidgets need to know to resize themselves when slides are shown/hidden.
+      // Fire the "slideenter" event (handled by htmlwidgets.js) when the current
+      // slide changes (different for each slide format).
+      (function () {
+        // dispatch for htmlwidgets
+        function fireSlideEnter() {
+          const event = window.document.createEvent("Event");
+          event.initEvent("slideenter", true, true);
+          window.document.dispatchEvent(event);
+        }
+
+        function fireSlideChanged(previousSlide, currentSlide) {
+          fireSlideEnter();
+
+          // dispatch for shiny
+          if (window.jQuery) {
+            if (previousSlide) {
+              window.jQuery(previousSlide).trigger("hidden");
+            }
+            if (currentSlide) {
+              window.jQuery(currentSlide).trigger("shown");
+            }
+          }
+        }
+
+        // hookup for slidy
+        if (window.w3c_slidy) {
+          window.w3c_slidy.add_observer(function (slide_num) {
+            // slide_num starts at position 1
+            fireSlideChanged(null, w3c_slidy.slides[slide_num - 1]);
+          });
+        }
+
+      })();
+    </script>
+
+    <script id="quarto-html-after-body" type="application/javascript">
+    window.document.addEventListener("DOMContentLoaded", function (event) {
+      const toggleBodyColorMode = (bsSheetEl) => {
+        const mode = bsSheetEl.getAttribute("data-mode");
+        const bodyEl = window.document.querySelector("body");
+        if (mode === "dark") {
+          bodyEl.classList.add("quarto-dark");
+          bodyEl.classList.remove("quarto-light");
+        } else {
+          bodyEl.classList.add("quarto-light");
+          bodyEl.classList.remove("quarto-dark");
+        }
+      }
+      const toggleBodyColorPrimary = () => {
+        const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+        if (bsSheetEl) {
+          toggleBodyColorMode(bsSheetEl);
+        }
+      }
+      toggleBodyColorPrimary();  
+      const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
+      tabsets.forEach(function(tabset) {
+        const tabby = new Tabby('#' + tabset.id);
+      });
+      const isCodeAnnotation = (el) => {
+        for (const clz of el.classList) {
+          if (clz.startsWith('code-annotation-')) {                     
+            return true;
+          }
+        }
+        return false;
+      }
+      const onCopySuccess = function(e) {
+        // button target
+        const button = e.trigger;
+        // don't keep focus
+        button.blur();
+        // flash "checked"
+        button.classList.add('code-copy-button-checked');
+        var currentTitle = button.getAttribute("title");
+        button.setAttribute("title", "Copied!");
+        let tooltip;
+        if (window.bootstrap) {
+          button.setAttribute("data-bs-toggle", "tooltip");
+          button.setAttribute("data-bs-placement", "left");
+          button.setAttribute("data-bs-title", "Copied!");
+          tooltip = new bootstrap.Tooltip(button, 
+            { trigger: "manual", 
+              customClass: "code-copy-button-tooltip",
+              offset: [0, -8]});
+          tooltip.show();    
+        }
+        setTimeout(function() {
+          if (tooltip) {
+            tooltip.hide();
+            button.removeAttribute("data-bs-title");
+            button.removeAttribute("data-bs-toggle");
+            button.removeAttribute("data-bs-placement");
+          }
+          button.setAttribute("title", currentTitle);
+          button.classList.remove('code-copy-button-checked');
+        }, 1000);
+        // clear code selection
+        e.clearSelection();
+      }
+      const getTextToCopy = function(trigger) {
+          const codeEl = trigger.previousElementSibling.cloneNode(true);
+          for (const childEl of codeEl.children) {
+            if (isCodeAnnotation(childEl)) {
+              childEl.remove();
+            }
+          }
+          return codeEl.innerText;
+      }
+      const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+        text: getTextToCopy
+      });
+      clipboard.on('success', onCopySuccess);
+      if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+        // For code content inside modals, clipBoardJS needs to be initialized with a container option
+        // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+        const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+          text: getTextToCopy,
+          container: window.document.getElementById('quarto-embedded-source-code-modal')
+        });
+        clipboardModal.on('success', onCopySuccess);
+      }
+        var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+        var mailtoRegex = new RegExp(/^mailto:/);
+          var filterRegex = new RegExp('/' + window.location.host + '/');
+        var isInternal = (href) => {
+            return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+        }
+        // Inspect non-navigation links and adorn them if external
+     	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+        for (var i=0; i<links.length; i++) {
+          const link = links[i];
+          if (!isInternal(link.href)) {
+            // undo the damage that might have been done by quarto-nav.js in the case of
+            // links that we want to consider external
+            if (link.dataset.originalHref !== undefined) {
+              link.href = link.dataset.originalHref;
+            }
+          }
+        }
+      function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+        const config = {
+          allowHTML: true,
+          maxWidth: 500,
+          delay: 100,
+          arrow: false,
+          appendTo: function(el) {
+              return el.closest('section.slide') || el.parentElement;
+          },
+          interactive: true,
+          interactiveBorder: 10,
+          theme: 'light-border',
+          placement: 'bottom-start',
+        };
+        if (contentFn) {
+          config.content = contentFn;
+        }
+        if (onTriggerFn) {
+          config.onTrigger = onTriggerFn;
+        }
+        if (onUntriggerFn) {
+          config.onUntrigger = onUntriggerFn;
+        }
+          config['offset'] = [0,0];
+          config['maxWidth'] = 700;
+        window.tippy(el, config); 
+      }
+      const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+      for (var i=0; i<noterefs.length; i++) {
+        const ref = noterefs[i];
+        tippyHover(ref, function() {
+          // use id or data attribute instead here
+          let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+          try { href = new URL(href).hash; } catch {}
+          const id = href.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note) {
+            return note.innerHTML;
+          } else {
+            return "";
+          }
+        });
+      }
+      const findCites = (el) => {
+        const parentEl = el.parentElement;
+        if (parentEl) {
+          const cites = parentEl.dataset.cites;
+          if (cites) {
+            return {
+              el,
+              cites: cites.split(' ')
+            };
+          } else {
+            return findCites(el.parentElement)
+          }
+        } else {
+          return undefined;
+        }
+      };
+      var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+      for (var i=0; i<bibliorefs.length; i++) {
+        const ref = bibliorefs[i];
+        const citeInfo = findCites(ref);
+        if (citeInfo) {
+          tippyHover(citeInfo.el, function() {
+            var popup = window.document.createElement('div');
+            citeInfo.cites.forEach(function(cite) {
+              var citeDiv = window.document.createElement('div');
+              citeDiv.classList.add('hanging-indent');
+              citeDiv.classList.add('csl-entry');
+              var biblioDiv = window.document.getElementById('ref-' + cite);
+              if (biblioDiv) {
+                citeDiv.innerHTML = biblioDiv.innerHTML;
+              }
+              popup.appendChild(citeDiv);
+            });
+            return popup.innerHTML;
+          });
+        }
+      }
+    });
+    </script>
+    
+
+</body></html>
