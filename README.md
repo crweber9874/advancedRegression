@@ -18,7 +18,7 @@ Please complete the form below so that I can grant you access to the interactive
 
 Explore the project's code and visualizations in this book:
 
-[Open In Course ](https://advancedregression.com) 
+[Course Notes ](https://advancedregression.com) 
 
 Explore the class slides and notes:
 
@@ -29,6 +29,8 @@ Explore the class slides and notes:
 [Ordinal Data  ](http://rpubs.com/crweber9874/1229074) 
 
 [Nominal Data  ](https://rpubs.com/crweber9874/1234999) 
+
+[Count Data ](https://rpubs.com/crweber9874/1243157) 
 
 
 ## Additional Sections (Optional)
