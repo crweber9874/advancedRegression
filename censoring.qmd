@@ -1,0 +1,679 @@
+---
+title: "Censoring, Truncation, and Panels"
+date: "`r Sys.Date()`"
+author: "Christopher Weber"
+organization: "University of Arizona"
+email: "chrisweber@arizona.edu"
+format: 
+  revealjs:
+    title-block-banner: "#378DBD"  # Custom background color
+editor: 
+  markdown: 
+    wrap: 70
+---
+
+## Introduction
+
+-   These notes follow the second half of Long (1997), Chapter 8
+
+-   **Truncation means data that fall above (or below) a specific
+    value**
+
+-   E.g., The impact of ideology on dollars spent during an election
+    cycle, among general election candidates.
+
+-   Truncation at zero, for instance
+
+-   We should not estimate a standard PRM or negative binomial model.
+    Both will predict zero counts, but we cannot observe zero counts
+    in practice
+
+## For instance
+
+-   **A zero count**, $p(y_i=0|x_i)=exp(-\mu_i)$.
+-   **A nonzero count**, $p(y_i>0|x_i)=1-exp(-\mu_i)$.
+-   And, a Poisson distribution where $p(y | y>0)$
+    $$p(y|x)={{exp(-\mu_i)\mu_i^{y_i}}\over{y_i!}(1-exp(-\mu_i))}$$
+
+## Summary
+
+-   The **Poisson Regression Model** (PRM)
+-   A strong assumption: $E(\mu)=var(y)$
+-   **Overdispersion**
+-   The negative binomial
+-   **Zero counts**
+-   Truncated regression
+-   Zero inflation and hurdle models
+
+## When Zeroes are Observed
+
+-   Imagine you are completing a project on casualties in military
+    conflict
+-   Your data is panel data, which includes a large sample of
+    countries over a many years
+-   You have a dataset with **a lot of zeros**
+-   What is a zero and why do we observe it?
+-   Superior defenses, nature of war, no boots on the ground, and/or
+    no conflict
+
+## Zero Generating
+
+-   **Zero stage**. $\theta_i$ the probability that $y=0$ and
+    $1-\theta_i$ is the probability that $y>0$
+-   Model 0/1 using a logit or probit regression
+    $$\theta_i=F(z_i\gamma)$$
+
+## Zero Generating
+
+-   **Count Stage**. Here, we may estimate a poisson or a negative
+    binomial count process
+
+$$pr(y_i=0|x_i)=\theta_i+(1-\theta_i)exp(\mu_i)$$
+
+## Zero Generating
+
+-   **Note**.The zero count is a composite of $\theta_i$, being zero
+    (e.g., lack of conflict), or zero in the count process itself,
+    $(1-\theta_i)exp(\mu_i)$ in the count process.
+
+-   Non-zero values:
+
+$$pr(y_i|x_i)=(1-\theta_i){{exp(\mu_i)\mu_i^{y_i}}\over{y_i!}}$$
+
+## Zero Generating
+
+-   The count process weighted by the probability of a non-zero.
+
+$$ \tiny{
+ L(\pi, \mu \mid y) = \prod_{i=1}^{n} \left[ \theta_i \mathbb{I}(y_i = 0) + (1 - \theta_i) {{exp(-\mu_i)\mu_i^{y_i}}\over{y_i!}} \right] }$$
+
+-   $\theta_i$ is the probability of an excess zero for the *i*th
+    observation.
+
+$$\tiny \log L(\pi, \mu \mid y) = \sum_{i=1}^{n} \log \left[ \theta_i \mathbb{I}(y_i = 0) + (1 - \theta_i){{exp(-\mu_i)\mu_i^{y_i}}\over{y_i!}} \right]$$
+
+## Zero Generating
+
+$$  \tiny \log L(\pi, \mu \mid y) = \sum_{i=1}^{n} \log \left[ \theta_i \mathbb{I}(y_i = 0) + (1 - \theta_i){{exp(-\mu_i)\mu_i^{y_i}}\over{y_i!}} \right]$$
+
+-   $\mu_i$ is the rate parameter of the Poisson distribution for the
+    *i*th observation.
+
+-   The rate function can be written as,
+    $\mu_i = exp(\alpha + \sum_K \beta_k x_{k,i}$)
+
+-   $\mathbb{I}(y_i = 0)$ is an indicator function that is 1 if (
+    $y_i = 0$ ) and 0 otherwise.
+
+## The Hurdle Model
+
+-   The "zero attenuated" regression model
+
+-   Predict a zero count
+
+$$\tiny \theta_i=F(z_i\gamma)$$
+
+-   Model the **non zero** equation with a *truncated* poisson (or
+    negative binomial)
+
+    $$\tiny pr(y_i|x_i)=(1-\theta_i){{exp(\mu_i)\mu_i^{y_i}}\over{y_i!}(1-exp(\mu_i))}$$
+
+## Zero Counts
+
+-   Zero counts are common in count data
+-   They may arise from a poisson or negative binomial process
+-   Or they may be observed for entirely separate reasons
+-   Theory should guide the decision to model zero counts
+
+## Censoring and Truncation
+
+-   Censoring is a different process
+-   Truncation means the data itself are fundamentally changed by the
+    truncation process
+-   Censoring involves missing data for a variable, but complete data
+    for the covariates
+-   Often, scores are **censored** at a particular value, usually the
+    min and/or max of a scale
+
+## Censoring and Truncation
+
+-   For instance, say we observe any value of the dependent variable
+    if the dependent variable is less than $\tau$
+
+$$y_{observed} = \{
+  \begin{array}{lr}
+    NA, y_{latent}\leq\tau\\
+    y_{latent}, y_{latent}>\tau\\
+  \end{array}$$
+
+## Censoring and Bias
+
+```{r}
+
+library(ggplot2)
+library(dplyr)
+set.seed(123)
+
+n <- 1000
+x <- rnorm(n)
+y <- 1 + 0.5 * x + rnorm(n)
+
+censoring_levels <- seq(-3, 3, by = 0.1)
+
+results <- data.frame(censoring_level = numeric(), estimated_slope = numeric())
+
+for (c in censoring_levels) {
+  y_censored <- pmax(y, c)  # Apply censoring
+  model <- lm(y_censored ~ x)  # Fit linear model
+  estimated_slope <- coef(model)[2]  # Extract estimated slope
+  results <- rbind(results, data.frame(censoring_level = c, estimated_slope = estimated_slope))
+}
+
+# Plot the estimated slope against the levels of censoring
+p <- ggplot(results, aes(x = censoring_level, y = estimated_slope)) +
+  geom_point() +
+  geom_line() +
+  labs(title = "Effect of Censoring on Estimated Slope",
+       x = "Censoring Level",
+       y = "Estimated Slope") +
+  theme_minimal()  + 
+  geom_hline(yintercept = 0.5, linetype = "dashed", color = "red")
+
+
+print(p)
+```
+
+## Censoring
+
+-   Assume everyone has an income, and they have a set dollar price
+    that they will spend on the car
+-   If the car is priced more than this value, they cannot buy the car
+    (even though they would like to buy the car)
+-   We only observe car purchases if the cost of the car is less than
+    the amount the person is willing to spend
+-   In short, for all people who have a value less than this
+    threshold, we observe missing data
+-   The missing data are "non-ignorable"
+
+## Censoring
+
+-   With truncation, $$y_{observed} =
+    \begin{array}{lr}
+      \tau, y_{latent}\leq\tau\\
+      y_{latent}, y_{latent}>\tau\\
+    \end{array}$$
+
+-   Assume $y_{latent}\sim N(\mu, \sigma^2)$
+
+-   The pdf for $y_{latent}$ is simply the normal density
+
+$$f(y_{latent}|\mu, \sigma)={{1}\over{\sigma}}\Phi({{\mu-y_{latent}}\over{\sigma}})$$
+
+## Censoring
+
+-   ***CDF***:
+    $\tiny pr(Y_{latent}>y_{latent})=\Phi({{\mu-y_{latent}}\over{\sigma}})$
+
+-   If we observe data greater than $\tau$,
+
+$$ \tiny pr(y|y>\tau, \mu, \sigma)={{f(y_{latent}|\mu \sigma)}\over{pr(y_{latent}>\tau)}}$$
+
+-   If we only observe data less than $\tau$ then,
+
+$$\tiny pr(y|y<\tau, \mu, \sigma)={{f(y_{latent}|\mu \sigma)}\over{pr(y_{latent}<\tau)}}$$
+
+$$\tiny {f(y|y>\tau, \mu, \sigma)}= [{{{1}\over{\sigma}}{\phi({{\mu-y_{latent}}\over{\sigma}})}}]/[{{{\Phi({{\mu-\tau}\over{\sigma}})}}}]$$
+
+## The Inverse Mills Ratio
+
+$$\tiny {f(y|y>\tau, \mu, \sigma)}= [{{{1}\over{\sigma}}{\phi({{\mu-y_{latent}}\over{\sigma}})}}]/[{{{\Phi({{\mu-\tau}\over{\sigma}})}}}]$$
+
+-   The numerator is simply the normal pdf, but we are dividing by the
+    normal cdf evaluated for the distribution greater than $\tau$.
+
+-   The PDF and the CDF
+
+-   Let's take the expectation of this pdf, as it yields an important
+    statistic.
+
+## The Inverse Mills Ratio
+
+$$\tiny {E(y|y>\tau)}=\mu+\sigma {{\phi{{\mu-\tau}\over{\sigma}}}\over{\Phi{{\mu-\tau}\over{\sigma}}}}$$
+
+-   Or, just simply, $\mu+\sigma \kappa {{\mu-\tau}\over{\sigma}}$,
+    with $\kappa$ representing, $\phi(.)/\Phi(.)$
+
+-   In this case, $\kappa$ (kappa) is a statistic called the inverse
+    Mill's ratio
+
+## The Inverse Mills Ratio
+
+$${E(y|y>\tau)}=\mu+\sigma {{\phi{{\mu-\tau}\over{\sigma}}}\over{\Phi{{\mu-\tau}\over{\sigma}}}}$$
+
+-   If $\tau$ is greater than $\mu$, meaning we would have serious
+    censoring, then this ratio will be larger
+
+-   But, if $\mu$ is much greater than $\tau$ -- we don't have much
+    censoring -- this ratio goes to zero and the distribution is just
+    the normal density.
+
+## The Inverse Mills Ratio
+
+```{r}
+mills.function<-function(x){ 
+  return(dnorm(x,0,1)/pnorm(x,
+0,1)) } 
+plot(seq(-2,2, length=100), mills.function(seq(-2,2,
+length=100)), xlab="mu minus tau", ylab="Inverse Mills")
+```
+
+-   If $\mu$ is greater than $\tau$ (positive numbers), the inverse
+    Mills ratio is smaller than when $\mu$ is less than $\tau$
+    (negative numbers).
+
+## Censored Regression
+
+-   Let's start by assuming a censored dependent variable (Long 1997,
+    pp. 195-196 for the full derivation).
+
+-   We observe all of $x$ but we don't observe $y$
+
+$$y_{observed} =
+  \begin{array}{lr}
+    \tau, y_{latent}\leq\tau\\
+    y_{latent}, y_{latent}>\tau\\
+      \end{array}$$
+
+-   This is censoring from below
+
+## Censored Regression
+
+-   We can also have censoring from above
+
+$$y_{observed} =
+  \begin{array}{lr}
+    \tau, y_{latent}\geq\tau\\
+    y_{latent}, y_{latent}<\tau\\
+  \end{array}$$
+
+-   Assume:
+
+$$y_{observed} =
+  \begin{array}{lr}
+    \tau, y_{latent}\leq\tau\\
+    \alpha+\sum_K \beta_k x_{k}+\epsilon, y_{latent}>\tau\\
+  \end{array}$$
+
+## Censored Regression
+
+-   The probability of censoring is $\tiny pr(censored|x_i) =
+    pr(y_{latent} < \tau |x_i) = pr(\epsilon_i<\tau -
+    (\alpha+\sum_K \beta_k x_{k})|x$
+
+-   The probability of not being censored given x,
+    $\tiny Pr(Uncensored|x) = 1 -\Phi(\tau - (\alpha+\sum_K \beta_k x_{k})/\sigma)= \Phi((\alpha+\sum_K \beta_k x_{k}) - \tau)/\sigma)$
+
+-   Just simplify by calling,
+    $\tiny \delta_i = ((\alpha+\sum_K \beta_k x_{k}) - \tau)/\sigma)$
+
+## Censored Regression
+
+-   The probability of being censored is $\Phi(-\delta_i)$ and the
+    probability of not being censored is $\Phi(\delta_i)$
+
+-   Censoring (like truncation) can occur from the "left," "right," or
+    really anywhere in an observed distribution
+
+## The Panel Design
+
+-   Panel data are common in political science
+
+-   Unlike cross sectional data, units are repeatedly observed
+
+-   The Time-Series Cross-Section (TSCS) design
+
+## The Panel Design
+
+-   Autocorrelated errors
+
+-   The AR/Markov Process
+
+    $$
+    Pr(C_{t+1}|C_{t},....C_{1})=Pr(C_{t+1}|C_{t})
+    $$
+
+-   The Drunkard's Walk
+
+## The Drunkard's Walk
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+library(ggplot2)
+library(gganimate)
+library(dplyr)
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Generate random walk data with normal distribution
+n_steps <- 100
+steps <- data.frame(
+  step = 1:n_steps,
+  x = cumsum(rnorm(n_steps)),
+  y = cumsum(rnorm(n_steps))
+)
+
+# Create the plot
+p <- ggplot(steps, aes(x = x, y = y)) +
+  geom_point() +
+  geom_path() +
+  labs(title = 'Drunkard\'s Walk', x = 'X Position', y = 'Y Position') +
+  theme_minimal()
+
+# Animate the plot
+anim <- p + 
+  transition_reveal(step) +
+  ease_aes('linear')
+
+# Save the animation
+
+animated_plot <- animate(anim, nframes = 200, fps = 10, duration = 20)
+
+# Display the animation
+animated_plot
+```
+
+## The Markov State Model
+
+-   E.g., Model the probability of a voter being a Republican today,
+    we would conceive of this as based on whether one was a Republican
+    yesterday.
+
+-   Or, [vote
+    turnout](https://www.azcentral.com/story/news/politics/elections/2024/11/21/arizona-voter-turnout-projection-from-the-republic-was-close/76462888007/)
+    in Arizona
+
+## The Markov State Model
+
+-   Movement across $C$ states are "transition probabilities."
+
+-   We can represent the transition between $m$ realizations of $C$ as
+    "transition matrix."
+
+-   The rows represent the realization of a state at time $t$ and the
+    columns represent $t+1$. The sum of the rows must equal 1, of
+    course, in order to be a proper probability distribution
+
+## The Markov State Model
+
+-   Multilevel data structures are incredibly common in political
+    science
+-   Typically, unit will correspond to the level-1 observation (e.g.,
+    country-year, person-wave, person-region, etc)
+-   OLS:
+
+$$y_{j,i}=\beta_0+\beta_1 x_{j,i}+e_{j,i}$$
+
+## Multilevel Structures: Fixed Effects
+
+$$\tiny y_{j,i}=\beta_0+\beta_1 x_{j,i}+e_{j,i}$$
+
+-   $y$ is an observation nested within a geographical unit, time,
+    etc.
+
+-   Perhaps the intercept in this equation vary across regions
+
+$$\tiny y_{j,i}=\beta_0+\beta_1 x_{j,i}+\sum_j^{J-1} \gamma_{j} d_j+ e_{j,i}$$
+
+-   $d_j$ denotes a dummy variable, specified for $J-1$ geographic
+    units
+
+## Fixed versus Random Effects
+
+$$\tiny y_{j,i}=\beta_{0,j}+\beta_1 x_{j,i}+ e_{1,j,i}$$
+
+-   Now, instead of $J-1$ dummies, we model the intercept as drawn
+    from a probability density; a common one, of course, is the normal
+
+$$\tiny \beta_{0,j}=\gamma_0+e_{2,j}$$
+
+$$\tiny e_{2,j} \sim N(0, \sigma^2)$$
+
+$$\tiny \beta_{0,j}\sim N(\gamma_0, \sigma^2)$$
+
+## Fixed versus Random Effects
+
+-   A two level model
+
+-   At level 1,
+
+    $$ y_{j,i}=\beta_{0}+\beta_1 x_{j,i}+ e_{1,j,i}$$
+
+-   At level 2,
+
+    $$ y_{j}=\gamma_{0}+\gamma x_{j}+ e_{2,j}$$
+
+-   The ecological fallacy
+
+-   For instance, **Red State, Blue State, Rich State, Poor State: Why
+    Americans Vote the Way They Do** (Gelman 2008)
+
+## Different Parameterizations
+
+$$\tiny p(y_{j,i}=1)=logit^{-1}(\beta_{0}+\beta_1 x_{j,i})$$
+
+$$\tiny \bar{y}_{j}=\gamma_{0}+\gamma_1 x_{j}+e_{2,j}$$
+
+## Building the Random Effects Model
+
+-   Limitations of the fixed effects model. We have to add $J-1$ dummy
+    variables to the model
+
+-   An equivalent approach is to just remove the $j$ level means from
+    $y$
+
+$$(y_{j,i}-\bar{y}_j)=\beta_{0}+\beta_1 x_{j,i}+ e_{i}$$
+
+-   Why?
+
+## Building the Random Effects Model
+
+$$(y_{j,i}-\bar{y}_j)=\beta_{0}+\beta_1 (x_{j,i}-\bar{x}_j)+ e_{i}$$
+
+-   The **within effects** estimator; it is the linear effect of $x$
+    on $y$
+
+## Random Effects
+
+-   Two regression models, **within** and **between**
+
+-   Recall the assumption that $cov(e_i, e_j)=0, \forall i\neq j$? Or
+    the assumption that $e_{j,i}$ are independent and identically
+    distributed?
+
+-   In the two stage formulation, we don't ever correct for this
+    process.
+
+## Model the Complex Errors
+
+$$
+\begin{eqnarray}
+y_{i}=b_{0,j[i]}+e_{1,i}\\
+b_{0,j}=\omega_0+e_{2,j[i]}\\
+e_{1,j} \sim N(0, \sigma_1^2)\\
+e_{2,j[i]} \sim N(0, \sigma_2^2)
+\end{eqnarray}
+$$
+
+-   $i$ nested within $j$ and variation across $j$
+-   **The Random Intercept Model**
+-   Or just, the **ANOVA** model and *between* versus *within* effects
+
+## Reduced Form
+
+$$\begin{eqnarray} y_{i}=\omega_0+e_{1,i}+e_{2,j[i]}\\
+\end{eqnarray}$$
+
+$$var(y_{j[i]})=var(e_{1,j[i]})+var(e_{2,j})$$
+
+$$\sigma^2_{(y_{j[i]})}=\sigma^2_{i}+\sigma^2_{{j[i]}}$$
+
+-   Note the similarity to variance decomposition, and the F-test,
+    $SS_T=SS_B+SS_W$?
+
+## Adding Predictors
+
+$$\tiny \begin{eqnarray}
+y_{i}=b_{0,j[i]}+b_{1} x_{i}+e_{1,i}\\
+b_{0,j}=\omega_0+\omega_1 x_{j[i]}+e_{2,j[i]}\\
+e_{1,j} \sim N(0, \sigma_1^2)\\
+e_{2,j[i]} \sim N(0, \sigma_2^2)
+\end{eqnarray}$$
+
+-   $x_{j[i]}$ consist of variables that vary within $J$ level two
+    observations; $x_{j}$ consists of variables that only vary between
+    level two observations
+
+## Adding Predictors
+
+$$x_{within}=x_{j}-\bar{x}_{j[i]}$$
+
+$$x_{between}=\bar{x}_{j[i]}$$
+
+-   These variables are orthogonal and they capture something
+    different -- the variation between $j$ levels and the variation
+    within $j$ levels
+
+## Adding Predictors
+
+$$\tiny
+\begin{eqnarray}
+y_{j[i]}=b_{0,j[i]}+b_{1} x_{within}+e_{1,i}\\
+b_{0,j[i]}=\omega_0+\omega_1 x_{between}+e_{2,j[i]}\\
+e_{1,j} \sim N(0, \sigma_1^2)\\
+e_{2,j[i]} \sim N(0, \sigma_2^2)
+\end{eqnarray}
+$$
+
+## The Random Coefficients Model
+
+$$\begin{eqnarray}
+y_{i}=b_{0,j[i]}+b_{1,j[i]}x_{i}+e_{1}\\
+b_{0,j[i]}=\omega_0+e_{2,j[i]}\\
+b_{1,j[i]}=\omega_1+e_{3,j[i]}
+\end{eqnarray}$$
+
+$$\begin{eqnarray}
+y_{i}=\omega_0+e_{2,j[i]}+(\omega_1+e_{3,j[i]})x_{i}+e_{1,i}\\
+\end{eqnarray}$$
+
+$$cov(e_{2,j[i]}, e_{3,j[i]}) \neq 0$$
+
+## The Random Coefficients Model, Correlated Errors
+
+$$ \tiny
+\begin{eqnarray}
+y_{i}=b_{0,j[i]}+b_{1,j[i]}x_{i}+e_{1,i}\\
+b_{0,j[i]}=\omega_0+\omega_1 x_{j[i]} +e_{2,j[i]}\\
+b_{1,j[i]}=\phi_0+\phi_1 x_{j[i]}+e_{3,j[i]}\\
+\end{eqnarray}$$ - The model captures the extent to which covariates
+change the $j$th value of $y$ (the intercept equation) and how
+covariates change the relationship between $x$ and $y$ (the slope
+equation).
+
+## The Random Coefficients Model, Correlated Errors
+
+$$\begin{eqnarray}
+y_{i}=\omega_0+\omega_1 x_{j[i]} +e_{2,j[i]}+(\phi_0+\phi_1 x_{j[i]}+e_{3,j[i]})x_{i}+e_{1,i}\\
+\end{eqnarray}$$
+
+## Pooling: A Continuum
+
+-   Let's situate the random intercepts/coefficients in a broader
+    structure.
+-   **No pooling** model. This is the fixed effects model above, in
+    which each level-2 unit has a unique mean value.
+-   *Complete pooling*. This is the regression model with no level 2
+    estimated means. Instead, we assume the level-2 units completely
+    pool around a common intercept (and perhaps slope). Formally,
+    compare
+
+$$y_{j,i}=\beta_0+\sum_j^{J-1} \gamma_{j} d_j+ e_{j,i}$$
+
+$$y_{j,i}=\beta_0+ e_{j,i}$$
+
+## Partial Pooling
+
+$$\tiny \begin{eqnarray}
+y_{j[i]}=b_{0,j[i]}+e_{1,i}\\
+\end{eqnarray}$$
+
+$$\tiny \begin{eqnarray}
+b_{0,j}={{y_j\times n_j/\sigma^2_y+y_{all}\times 1/\sigma^2_{b_0}}\over{n_j/\sigma^2_y+ 1/\sigma^2_{b_0}}}\end{eqnarray}$$
+
+-   The first part of the numerator represents the movement away from
+    a common mean. Note that as $n_j$ increases (the group size), the
+    estimate is pulled further from the common mean (which of course
+    is what's on the right in the numerator).
+
+-   As $n_j$ increases, the estimate of the estimated mean is
+    influenced more by the group than a common mean.
+
+-   As $n_j$ decreases -- so small groups -- the formula now allows
+    for a stronger likelihood that the estimates pools around a single
+    value.
+
+## Partial Pooling
+
+$$ \begin{eqnarray}
+b_{0,j}={{y_j\times n_j/\sigma^2_y+y_{all}\times 1/\sigma^2_{b_0}}\over{n_j/\sigma^2_y+ 1/\sigma^2_{b_0}}}\end{eqnarray}$$
+
+-   As the within group variance increases, the group mean is pullled
+    towards the pooled mean
+
+-   As the between group variance increases, the common mean exerts a
+    smaller impact
+
+-   The values in the numerator are then weighted by the variation
+    between and within level-2 units
+
+## Partial Pooling
+
+-   **The Intra-class correlation**(ICC)
+
+$$ICC=\sigma^2_{b_0}/[\sigma^2_{b_0}+\sigma^2_{y}]$$
+
+Recall,
+
+$$\sigma^2_{all}=\sigma^2_{b_0}+\sigma^2_{y}$$
+
+-   Thus, the estimate is an estimate of how much of the total
+    variation in $y$ is a function of variation between level-2 units,
+    relative to within level-1 units
+
+## 
+
+![](w3.png)
+
+
+
+## 
+
+![](w2.png)
+
+
+## 
+
+![](w1.png)
+
+## Some Practical Advice
+
+-   The ICC should decrease as you include level-2 predictors; compare
+    to a model without predictors
+
+-   Interpretation of the level-2 expected values (i.e., the group
+    means) is based on a compromise between the pooled and no pooling
+    models
+
+-   If we estimate a regression model with a dummy for every level-2
+    unit and predictors, the model is not identified because the
+    variables will be collinear (Gelman and Hill 2009, 269)
