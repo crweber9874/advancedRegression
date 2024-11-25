@@ -32,6 +32,7 @@ Explore the class slides and notes:
 
 [Count Data ](https://rpubs.com/crweber9874/1243157) 
 
+[Zero Inflated, Truncation, Censoring, Panel ](https://rpubs.com/crweber9874/censoring_mlm) 
 
 ## Additional Sections (Optional)
 
