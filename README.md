@@ -22,17 +22,7 @@ Explore the project's code and visualizations in this book:
 
 Explore the class slides and notes:
 
-[Binary Data ](http://rpubs.com/crweber9874/1229076) 
-
-[Simulation  ](http://rpubs.com/crweber9874/1229075) 
-
-[Ordinal Data  ](http://rpubs.com/crweber9874/1229074) 
-
-[Nominal Data  ](https://rpubs.com/crweber9874/1234999) 
-
-[Count Data ](https://rpubs.com/crweber9874/1243157) 
-
-[Zero Inflated, Truncation, Censoring, Panel ](https://rpubs.com/crweber9874/censoring_mlm) 
+[Introduction] (http://rpubs.com/crweber9874/introduction)
 
 ## Additional Sections (Optional)
 
