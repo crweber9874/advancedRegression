@@ -24,6 +24,7 @@ Explore the class slides and notes:
 
 [Introduction] (http://rpubs.com/crweber9874/introduction)
 
+[Logit and Probit] (https://rpubs.com/crweber9874/1229076)
 ## Additional Sections (Optional)
 
 * **Installation:** Instructions on how to set up the project locally.
