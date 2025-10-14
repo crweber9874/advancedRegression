@@ -28,7 +28,7 @@ Explore the class slides and notes:
 
 [Causation and Simulation] (https://rpubs.com/crweber9874/1347405)
 
-[Fit and Ordered Logit and Probit] (https://rpubs.com/crweber9874/1349919)
+[Fit and Ordered Logit and Probit] (https://rpubs.com/crweber9874/1229074)
 ## Additional Sections (Optional)
 
 * **Installation:** Instructions on how to set up the project locally.
