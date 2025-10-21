@@ -636,6 +636,7 @@ plotDots(plot_burn$plotting_data |>
 ##  Predicted Probabilities {.smaller}
 
 ```{r, warning = FALSE, message = FALSE, echo = FALSE}
+devtools::load_all()
 plotDots(plot_burn$plotting_data |>
           filter(vote_trump == 0), 
           x_var = "category",

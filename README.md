@@ -29,7 +29,11 @@ Explore the class slides and notes:
 [Causation and Simulation] (https://rpubs.com/crweber9874/1347405)
 
 [Fit and Ordered Logit and Probit] (https://rpubs.com/crweber9874/1229074)
+
+[Multicategory Models: The Multinomial Logit] (https://rpubs.com/crweber9874/1358605)
 ## Additional Sections (Optional)
+
+
 
 * **Installation:** Instructions on how to set up the project locally.
 * **Usage:** Examples and explanations on how to use the project.

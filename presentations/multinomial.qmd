@@ -1,0 +1,829 @@
+---
+title: "Multicategory Models"
+subtitle: "The Multinomial Model"
+date: "`r Sys.Date()`"
+author: "Christopher Weber"
+organization: "University of Arizona"
+email: "chrisweber@arizona.edu"
+format: 
+  revealjs:
+    theme: simple   
+    slide-number: true
+    toc: false
+    toc-depth: 2
+    code-fold: true
+    code-summary: "Show/Hide Code"
+    transition: fade
+    center: true
+    width: 1200
+    height: 800
+    slide-level: 2
+    navigation-mode: linear
+    self-contained: false
+    css: styles.css
+title-block-banner: "#378DBD"  
+---
+
+
+## Revisiting the Ordered Logit {.smaller}
+
+- $k = 4$, so **length($\tau$) = 3**
+
+$$
+\begin{eqnarray*}
+P(y=1) & = & F(\tau_1 - \mathbf{X}\boldsymbol{\beta}) \quad \text{where } \tau_0 = -\infty \\
+P(y=2) & = & F(\tau_2 - \mathbf{X}\boldsymbol{\beta}) - F(\tau_1 - \mathbf{X}\boldsymbol{\beta}) \\
+P(y=3) & = & F(\tau_3 - \mathbf{X}\boldsymbol{\beta}) - F(\tau_2 - \mathbf{X}\boldsymbol{\beta}) \\
+P(y=4) & = & 1 - F(\tau_3 - \mathbf{X}\boldsymbol{\beta}) \quad \text{where } \tau_4 = \infty
+\end{eqnarray*}
+$$
+
+## Two Parts  {.smaller}
+
+### The Structural Model
+- The model consists of a **structural model** and a **measurement model**
+
+- The structural model is similar to the binary logit/probit model, in which we assume there is a latent continuous variable that underlies the observed ordinal variable.
+
+$$y_{latent}=\beta_0 + \beta_1x_i +...\sum^{J}_{j =1} \beta_j x_{ij}+e_i$$
+
+$$y=X\beta+e$$
+
+- There is no intercept term, as these are represented by the cutpoints. But it's useful to think of the cutpoints as intercepts for each of the cumulative logits.
+
+## Two Parts  {.smaller}
+
+### The Measurement Model  {.smaller}
+
+-   Instead of the variable being 0/1, it is not more than two categories that are ordered. Assume we knew $y_{latent}$ and would like to map that to observing a particular category.
+
+-   Using the same logic from the binary regression model, assume that we observe the category based on the orientation to a series of cutpoints, where
+
+$$y_i=m: \tau_{k-1}\leq y_{latent} < \tau_{k}$$
+
+- In `MASS::polr()` these are `zeta`
+
+## Parallel Lines
+
+```{r}
+library(plotly)
+x <- seq(-5, 5, length.out = 100)
+logit <- function(x) 1 / (1 + exp(-x))
+
+y1 <- logit(x - 0.5)
+y2 <- logit(x + 0.1)
+y3 <- logit(x + 0.5)
+
+data <- data.frame(x, y1, y2, y3)
+
+fig <- plot_ly(data, x = ~x) |>
+  add_trace(y = ~y1, type = 'scatter', mode = 'lines', name = 'Categories 2,3,4 versus Categories 1') |>
+  add_trace(y = ~y2, type = 'scatter', mode = 'lines', name = 'Categories 3,4 versus Categories 1,2') |>
+  add_trace(y = ~y3, type = 'scatter', mode = 'lines', name = 'Category 4 versus Categories 1, 2, 3') |>
+  layout(title = 'Parallel Lines',
+         xaxis = list(title = 'IV'),
+         yaxis = list(title = 'Latent Variable (y = xB)'))
+
+fig
+```
+
+
+## Violating Parallel Lines  {.smaller}
+
+- **Policy Attitudes/Ideology**. Assume the following item: ``To what extent do you agree or disagree with the following statement: Government should provide universal health care,`` which you predict with ideology, measured from 0 (Strong Liberal) to 1 (Strong Conservative). If ideology has a different effect from moving from `Strongly Agree` to `Agree` than from `Agree` to `Disagree`, then the parallel lines assumption is violated.
+
+
+
+
+```{r}
+library(plotly)
+x <- seq(-5, 5, length.out = 100)
+logit <- function(x) 1 / (1 + exp(-x))
+
+y1 <- logit(0.5*x - 0.5)
+y2 <- logit(1.5*x + 0.1)
+y3 <- logit(x + 0.5)
+
+data <- data.frame(x, y1, y2, y3)
+
+fig <- plot_ly(data, x = ~x) |>
+  add_trace(y = ~y1, type = 'scatter', mode = 'lines', name = 'Strong Agree/Agree/Disagree versus Categories Strong Disagree') |>
+  add_trace(y = ~y2, type = 'scatter', mode = 'lines', name = 'Strong Agree/Agree versus Disagree/Strong Disagree') |>
+  add_trace(y = ~y3, type = 'scatter', mode = 'lines', name = 'Strong Agree versus Strong Disagree/Agree/Disagree') |>
+  layout(title = 'Violating The Parallel Lines Assumption (Policy and Ideology)',
+         xaxis = list(title = 'IV'),
+         yaxis = list(title = 'Latent Variable (Ideology)'))
+
+fig
+```
+
+
+## Violating Parallel Lines  {.smaller}
+
+- **Policy Attitudes/Ideology**. Assume the following item: ``To what extent do you agree or disagree with the following statement: Government should provide universal health care,`` which you predict with ideology, measured from 0 (Strong Liberal) to 1 (Strong Conservative). If ideology has a different effect from moving from `Strongly Agree` to `Agree` than from `Agree` to `Disagree`, then the parallel lines assumption is violated.
+
+- **Grades and Study Time**. Assume you are predicting letter grades (A, B, C, D, F) with study time. Since study time is only part of what determines a grade -- also reading the textbook, attending lectures, working through examples -- it might be enough to move a student from an F to a D. However, moving from a B to an A might require more than just study time -- it might require the aformetioned factors, along with ability, prior knowledge, or access to tutoring. The proportional lines assumption is violated.
+
+- **Other Examples**
+
+- **Other Models**. The parallel lines assumption can be tested by comparing the likelihood of the ordered logit/probit model to a different model, a model in which the independent variables have different effects in predicting category membership. This is called a multinomial model. When using the logit distribution, this is called a multinomial logit; when using the normal distribution, it is called a multinomial probit.
+
+## The Multinomial Model  {.smaller}
+
+-   These notes follow Long (1997), Chapter 6 and McElreath (2021) Chapter 10.
+-   Often, dependent variables don't have a natural ordering
+-   If we have multi-category nominal data, we will again violate the assumptions of the classical linear regression model
+-   In the case of nominal data, we again can use the intuition of logit and probit with binary variables
+-   The *Multinomial Logit* and *Multinomial Probit*
+
+## The Multinomial Model  {.smaller}
+
+-  The multinomial logit/probit model is an extension of the binary regression model to more than two categories.
+-  The key difference is that we estimate $k-1$ unique equations, where $k$ is the number of categories.
+-  One category will be excluded, serving as the baseline or reference category.
+-  Each equation will include an intercept, which is similar to the cutpoints in the ordered logit/probit model.
+-  But the cutpoints need not be ordered; we can relax this assumption.
+
+
+$$pr(y_{obs} = \space \space
+  \begin{array}{lr}
+    C_1, pr(y=1|x_i)\\
+    C_2, pr(y=2|x_i)\\
+    C_3, pr(y=3|x_i)\\
+    ...\\
+    C_k, pr(y=K|x_i)\\
+  \end{array}
+$$
+
+
+## The Multinomial Model  {.smaller}
+
+- Assume we have $k$ categories, and each subject $i$ falls into one of these categories. This means there are $k$ probabilities for each subject. 
+
+- The joint probability of observing counts $y_1, y_2,....y_k$ in each category, given $n$ trials and probabilities $p_1, p_2,...p_k$ is provided by the multinomial distribution:
+
+$$
+pr(y_1, y_2.....y_k| n, p_1, p_2....p_k)={{n!}\over{y_1!y_2!...y_k!}}p_1^{y_1}p_2^{y_2}...p_k^{y_k}
+$$
+- Put another way, for a given row (subject) in our data. 
+
+$$
+pr(y_1, y_2.....y_k| n, p_1, p_2....p_k)={{n!}\over{\prod_{i} y_i!}} \prod_{i=1}^K p_i^{y_i}
+$$
+
+- The **multinomial distribution** is also refered to as a **categorical distribution**. Like binary logit and probit, the model is used in machine learning as well, and is known as the **maximum entropy classifier**. 
+
+## The Intuition  {.smaller}
+
+- Voting (1=Democrat; 2=Republican; 3=Independent)
+- Run one logit model predicting the probability of Democrat relative to Republican voting
+- Run a second model predicting Democrat versus Independent 
+- Run a third model predicting Republican versus Independent
+- $y_{obs} \in (R, D, I)$.
+
+$$ln({{pr(D|x)}\over{pr(R|x})}=\beta_{0,D|R}+\beta_{1,D|R} \cdot x$$ 
+
+$$ln({{pr(D|x)}\over{pr(I|x})}=\beta_{0,D|I}+\beta_{1,D|I} \cdot x$$
+$$ln({{pr(R|x)}\over{pr(I|x})}=\beta_{0,R|I}+\beta_{1,R|I}x \cdot $$
+
+## Intuition  {.smaller}
+
+- However, the sum of the first two equations equals the third equation. 
+
+- The three equations are **not identified**.
+
+
+$$\ln\left(\frac{P(D|x)}{P(R|x)}\right) = \ln\left(\frac{P(D|x)}{P(I|x)}\right) - \ln\left(\frac{P(R|x)}{P(I|x)}\right)$$
+
+$$
+\beta_{0,D|R} = \beta_{0,D|I} - \beta_{0,R|I}
+$$
+
+
+$$
+\beta_{1,D|R} = \beta_{1,D|I} - \beta_{1,R|I}
+$$
+- **Fix a reference category.**
+
+$$\ln\left(\frac{P(D|x)}{P(I|x)}\right) = \beta_{0,D} + \beta_{1,D} \cdot x$$
+
+$$\ln\left(\frac{P(R|x)}{P(I|x)}\right) = \beta_{0,R} + \beta_{1,R} \cdot x$$
+
+$$\ln\left(\frac{P(I|x)}{P(I|x)}\right) = ln(1) = 0 \quad $$
+
+
+- We need not estimate each model; it's redundant (and not identified), so there are **infinite** solutions. Instead we estimate **k-1** equations, which contrast the effects to a constant reference category.
+
+
+## Instead  {.smaller}
+
+- Assume $y$ has three categories: Democrat (D), Republican (R), Independent (I)
+
+
+$$
+\begin{aligned}
+P(y = I) &= \frac{1}{1 + \exp(b_{0,D} + b_{1,D} \cdot x) + \exp(b_{0,R} + b_{1,R} \cdot x)} \\
+\\
+P(y = D) &= \frac{\exp(b_{0,D} + b_{1,D} \cdot x)}{1 + \exp(b_{0,D} + b_{1,D} \cdot x) + \exp(b_{0,R} + b_{1,R} \cdot x)} \\
+\\
+P(y = R) &= \frac{\exp(b_{0,R} + b_{1,R} \cdot x)}{1 + \exp(b_{0,D} + b_{1,D} \cdot x) + \exp(b_{0,R} + b_{1,R} \cdot x)}
+\end{aligned}
+$$
+
+- We estimate $k-1$ unique equations, where one category serves as the baseline, reference category, here *Independent*. 
+
+## The Likelihood  {.smaller}
+
+- The probability of being in the $k$th category for the $i$th subject is,
+
+$$P(y_i = k \mid X_i) = \frac{\exp(X_i \beta_k)}{\sum_{j=1}^{K} \exp(X_i \beta_j)}$$
+
+$$pr(y_{i}=1|X_i)\times pr(y_{i}=2|X_i) \times pr(y_{i}=3|X_i) \times....pr(y_{i}=K|X_i)$$
+
+$$P(y_i = k \mid X_i) = \prod_{j=1}^K\frac{\exp(X_i \beta_k)}{\sum_{j=1}^{K} \exp(X_i \beta_j)}$$
+$$P(y_i = k \mid X_i) = L(\beta) =  \prod_{i=1}^N \prod_{j=1}^K\frac{\exp(X_i \beta_k)}{\sum_{j=1}^{K} \exp(X_i \beta_j)}$$
+$$P(y_i = k \mid X_i) =  LL(\beta) =\sum_{i=1}^N \sum_{j=1}^Klog(\frac{\exp(X_i \beta_k)}{\sum_{j=1}^{K} \exp(X_i \beta_j)})$$
+
+```{r, warning = FALSE, message = FALSE, echo = FALSE}
+library(dplyr)
+library(tidyr)
+# devtools::install_github("crweber9874/regressionEffects")
+library(regressionEffects)
+
+download.file("https://raw.githubusercontent.com/crweber9874/advancedRegression/main/data/wss20.rda",
+              destfile = "wss20.rda")
+## Load into session
+load("wss20.rda")
+
+wss20 = wss20 |>
+  pivot_wider(
+    names_from = contestation,
+    values_from = contestation_value
+  )
+
+sample_df <- wss20 |>
+  mutate(contestation = rowMeans(cbind(attend_march, criticize_election, burn_flag, court, recount), na.rm = 
+                                   TRUE), # Construct a continuous scale
+        vote_trump = presvote_trump_2020,
+        authoritarianism = rowMeans(cbind(auth_1, auth_2, auth_3, auth_4), na.rm = TRUE),
+        republican = ifelse(party_identification3 == 3, 1, 0),
+        democrat = ifelse(party_identification3 == 1, 1, 0),
+        independent = ifelse(party_identification3 == 2, 1, 0),
+        libcon = (ideology5 - 1)/4,
+        prepost = ifelse(prepost == "post", 1, 0)
+)
+
+```
+
+## Parallel Lines  {.smaller}
+
+- Estimate a multinomial logit and an ordered logit model predicting `burn_flag` with `libcon`.
+- Compare the two models, using a likelihood ratio test.
+
+```{r, echo = TRUE, message = FALSE, error = FALSE}
+library(nnet)
+multinom(burn_flag ~ libcon, data = sample_df) |>
+  summary()
+```
+
+
+## Parallel Lines  {.smaller}
+
+- Estimate a multinomial logit and an ordered logit model predicting `burn_flag` with `libcon`.
+- Compare the two models, using a likelihood ratio test.
+
+```{r, echo = TRUE, message = FALSE, error = FALSE}
+model_multi <- nnet::multinom(burn_flag ~ libcon, data = sample_df)
+model_ord <-   MASS::polr(as.factor(burn_flag) ~ libcon, data = sample_df, Hess = TRUE)
+lmtest::lrtest(model_multi, model_ord)
+```
+- Reject the null hypothesis that the ordered logit is preferred. The multinomial logit fits better, at the $\alpha = 0.05$ level.
+
+## The Bayesian Model {.smaller}
+
+```{r, echo = TRUE, message = FALSE, error = FALSE}
+library(brms)
+model <- brm(
+    formula = burn_flag ~ libcon,
+    data = sample_df,
+    family = categorical(),
+    cores = 10
+  )
+```
+
+```{r}
+print(model)
+```
+
+## Summary  {.smaller}
+
+-  The multinomial logit model is an extension of the binar logit regression model to more than two categories.
+-  The key difference is that we estimate $k-1$ unique equations, where $k$ is the number of categories.
+-  One category will be excluded, serving as the baseline or reference category.
+-  Both the frequentist (`nnet::multinom()`) and Bayesian (`brms::brm()`) approaches are available to estimate these models.
+-  They produce substantively identical results in this case, because priors are relatively uninformative.
+-  The identical problem of **non-additive** and **non-linear** effects apply here. The coefficients should be interpreted as log odds, but in reference to a common category. In our example, "Strong Opposition."
+$$
+{{\partial pr(y=k|x)}\over{\partial x}}=\sum_{j=1}^J \beta_{j,m}pr(y=k|x)
+$$
+
+## An Application {.smaller}
+
+- $y_{obs}$ = Trust in the President (1=Strongly Disagree; 2=Disagree; 3=Agree; 4=Strongly Agree)
+- $x_1$ = Party Identification (1=Democrat; 2=Independent; 3=Republican)
+- $x_2$ = Pre/Post Election (0=Pre; 1=Post)
+- $y = b_0 + b_1x_1 + b_2x_2 + b_3x_1x_2 + e$
+
+```{r, echo = TRUE, message = FALSE, error = FALSE}
+library(brms)
+df = sample_df |>
+  mutate(
+    party_identification3 = 
+      case_when(
+      party_identification3 == 1 ~ "Democrat",
+      party_identification3 == 2 ~ "Independent",
+      party_identification3 == 3 ~ "Republican",
+      TRUE ~ NA_character_
+    ),
+    prepost = case_when(
+      prepost == 1 ~ "Post Election",
+      prepost == 0 ~ "Pre Election",
+      TRUE ~ NA_character_
+  )
+  )
+multinomial_model <- brm(
+    formula = trustPresident ~ as.factor(party_identification3)* as.factor(prepost),
+    data = df,
+    family = categorical(),
+    cores = 10
+  )
+ordinal_model <- brm(
+    formula = trustPresident ~ as.factor(party_identification3)* as.factor(prepost),
+    data = df,
+    family = cumulative(),
+    cores = 10
+  )
+
+```
+## The Ordinal Model {.smaller}
+
+```{r, echo = TRUE, message = FALSE, error = FALSE}
+ordinal_model
+```
+
+## The Multinomial Model {.smaller}
+
+```{r, echo = TRUE, message = FALSE, error = FALSE}
+multinomial_model
+```
+
+## `tidybayes` {.smaller}
+
+- The `tidybayes` package makes it easy to work with Bayesian models in R, including `brms` models.
+- Specify a design matrix, pass to `add_epred_draws()`, and summarize the results.
+
+```{r, echo = TRUE, message = FALSE, error = FALSE}
+# Data
+tidyr::expand_grid(
+  party_identification3 = c("Democrat", "Independent", "Republican"),
+  prepost = c("Pre Election", "Post Election")
+ ) |>
+# Predictions
+    as.data.frame()|>
+      tidybayes::add_epred_draws(ordinal_model) |>
+    group_by(party_identification3, prepost, .category) %>%
+      summarize(
+        .value = mean(.epred),
+        .lower = quantile(.epred, 0.025),
+        .upper = quantile(.epred, 0.975)
+      ) -> plot_dat
+
+
+```
+
+
+## Democrats {.smaller}
+
+```{r, echo = TRUE, message = FALSE, error = FALSE}
+library(regressionEffects)
+plotDots(plot_dat |>
+          filter(party_identification3 == "Democrat"), 
+          x_var = ".category",
+          y_var = ".value",
+          color_var = "prepost",
+          color_levels = c("Pre Election", "Post Election"),
+          color_labels = c("Pre Election", "Post Election"),
+          color_values = c("grey", "black"),
+          title = "Trust In Presidency\nDemocrats",
+          y_label =  "Mean Probability",
+           category_levels = c("1", "2", "3", "4"),
+          category_labels = c("Strong Distrust", "Distrust",
+              "Trust", "Strong Trust"),
+)
+```
+
+## Republicans {.smaller}
+
+```{r, echo = TRUE, message = FALSE, error = FALSE}
+library(regressionEffects)
+plotDots(plot_dat |>
+          filter(party_identification3 == "Republican"), 
+          x_var = ".category",
+          y_var = ".value",
+          color_var = "prepost",
+          color_levels = c("Pre Election", "Post Election"),
+          color_labels = c("Pre Election", "Post Election"),
+          color_values = c("grey", "black"),
+          title = "Trust In Presidency\nRepulicans",
+          y_label =  "Mean Probability",
+           category_levels = c("1", "2", "3", "4"),
+          category_labels = c("Strong Distrust", "Distrust",
+              "Trust", "Strong Trust"),
+)
+```
+
+## Independent {.smaller}
+
+```{r, echo= TRUE, message = FALSE, error = FALSE}
+#devtools::install_github("crweber9874/regressionEffects")
+library(regressionEffects)
+plotDots(plot_dat |>
+          filter(party_identification3 == "Republican"), 
+          x_var = ".category",
+          y_var = ".value",
+          color_var = "prepost",
+          color_levels = c("Pre Election", "Post Election"),
+          color_labels = c("Pre Election", "Post Election"),
+          color_values = c("grey", "black"),
+          title = "Trust In Presidency\nDemocrats",
+          y_label =  "Mean Probability",
+           category_levels = c("1", "2", "3", "4"),
+          category_labels = c("Strong Distrust", "Distrust",
+              "Trust", "Strong Trust"),
+)
+```
+
+## `tidybayes`: Multinomial Model
+
+- With a different parameterization, just change the model object passed to `add_epred_draws()`
+
+```{r, echo= TRUE, message = FALSE, error = FALSE}
+# Data
+tidyr::expand_grid(
+  party_identification3 = c("Democrat", "Independent", "Republican"),
+  prepost = c("Pre Election", "Post Election")
+ ) |>
+# Predictions
+    as.data.frame()|>
+      tidybayes::add_epred_draws(multinomial_model) |>
+    group_by(party_identification3, prepost, .category) %>%
+      summarize(
+        .value = mean(.epred),
+        .lower = quantile(.epred, 0.025),
+        .upper = quantile(.epred, 0.975)
+      ) -> plot_dat
+
+
+```
+
+## The Multinomial Model: Democrats {.smaller}
+
+- The multinomial and ordinal models produce similar, almost identical results. 
+
+```{r, echo = TRUE, message = FALSE, error = FALSE}
+library(regressionEffects)
+plotDots(plot_dat |>
+          filter(party_identification3 == "Democrat"), 
+          x_var = ".category",
+          y_var = ".value",
+          color_var = "prepost",
+          color_levels = c("Pre Election", "Post Election"),
+          color_labels = c("Pre Election", "Post Election"),
+          color_values = c("grey", "black"),
+          title = "Trust In Presidency\nDemocrats. Multinomial",
+          y_label =  "Mean Probability",
+           category_levels = c("1", "2", "3", "4"),
+          category_labels = c("Strong Distrust", "Distrust",
+              "Trust", "Strong Trust"),
+)
+```
+## Compare Estimates{.smaller}
+
+- Let's compare the results more directly, simply by subtracting the estimates from the ordinal model from those of the multinomial model.
+
+```{r, echo = TRUE, message = FALSE, error = FALSE}
+### Preedict multinom and ordinal
+
+multinom_pred = tidyr::expand_grid(
+  party_identification3 = c("Democrat", "Independent", "Republican"),
+  prepost = c("Pre Election", "Post Election")
+ ) |>
+    as.data.frame()|>
+     tidybayes::add_epred_draws(multinomial_model)  |>
+    rename(epred_multinomial = .epred)
+
+ordinal_pred =  tidyr::expand_grid(
+  party_identification3 = c("Democrat", "Independent", "Republican"),
+  prepost = c("Pre Election", "Post Election")
+ ) |>
+    as.data.frame()|>
+     tidybayes::add_epred_draws(ordinal_model) |> 
+    rename(epred_ordinal = .epred) 
+
+# Useful function to join data together, from tidyr
+
+compare_pred = multinom_pred |>
+  left_join(ordinal_pred,
+            by = c("party_identification3", "prepost", ".category", ".draw")) |>
+  mutate(diff = epred_multinomial - epred_ordinal)
+
+## Summarize
+compare_pred |>
+group_by(party_identification3, prepost, .category) %>%
+      summarize(
+        .value = mean(diff),
+        .lower = quantile(diff, 0.025),
+        .upper = quantile(diff, 0.975)
+      ) -> plot_dat
+
+```
+ 
+## Democrats {.smaller}
+
+
+```{r, echo = TRUE, message = FALSE, error = FALSE}
+add_jitter <- function(data, jitter_amount = 0.1) {
+  data %>%
+    group_by(.category, prepost) |>
+    mutate(
+      .category_jittered = as.numeric(.category) + ifelse(prepost == "Post Election", 0.1, 0)) |>
+    ungroup()
+}
+
+plot_dat_jittered <- add_jitter(plot_dat, jitter_amount = 0.1)
+
+
+plot_ly(plot_dat_jittered |> filter(party_identification3 == "Democrat"), 
+             x = ~ .category_jittered, 
+             y = ~.value,
+             color = ~prepost,
+             type = 'scatter',
+             mode = 'markers',
+             marker = list(size = 7, opacity = 0.5),
+             error_y = list(
+               type = "data",
+               symmetric = FALSE,
+               array = ~(.upper - .value),
+               arrayminus = ~(.value - .lower),
+               width = 1
+             ),
+             text = ~paste("Group:", prepost,
+                          "<br>Category:", .category,
+                          "<br>Value:", round(.value, 4),
+                          "<br>CI: [", round(.lower, 4), ", ", round(.upper, 4), "]"),
+             hovertemplate = "%{text}<extra></extra>"
+) %>%
+  layout(
+    title = "Difference in Estimates. Democrats",
+    xaxis = list(title = "Category",
+                        tickmode = "array",
+      tickvals = sort(unique(as.numeric(plot_dat_jittered$.category))),
+      ticktext = sort(unique(as.numeric(plot_dat_jittered$.category)))),
+    yaxis = list(title = "Difference Estimate"),
+    hovermode = 'closest',
+    showlegend = TRUE
+  )
+
+```
+
+## Independents {.smaller}
+
+```{r, echo = TRUE, message = FALSE, error = FALSE}
+add_jitter <- function(data, jitter_amount = 0.1) {
+  data %>%
+    group_by(.category, prepost) |>
+    mutate(
+      # Add random jitter to x-coordinate
+      .category_jittered = as.numeric(.category) + ifelse(prepost == "Post Election", 0.1, 0)) |>
+    ungroup()
+}
+
+# Apply jittering to your data
+plot_dat_jittered <- add_jitter(plot_dat, jitter_amount = 0.1)
+
+
+plot_ly(plot_dat_jittered |> filter(party_identification3 == "Independent"), 
+             x = ~ .category_jittered, 
+             y = ~.value,
+             color = ~prepost,
+             type = 'scatter',
+             mode = 'markers',
+             marker = list(size = 7, opacity = 0.5),
+             error_y = list(
+               type = "data",
+               symmetric = FALSE,
+               array = ~(.upper - .value),
+               arrayminus = ~(.value - .lower),
+               width = 1
+             ),
+             text = ~paste("Group:", prepost,
+                          "<br>Category:", .category,
+                          "<br>Value:", round(.value, 4),
+                          "<br>CI: [", round(.lower, 4), ", ", round(.upper, 4), "]"),
+             hovertemplate = "%{text}<extra></extra>"
+) %>%
+  layout(
+    title = "Difference in Estimates. Independents",
+    xaxis = list(title = "Category",
+                        tickmode = "array",
+      tickvals = sort(unique(as.numeric(plot_dat_jittered$.category))),
+      ticktext = sort(unique(as.numeric(plot_dat_jittered$.category)))),
+    yaxis = list(title = "Difference Estimate"),
+    hovermode = 'closest',
+    showlegend = TRUE
+  )
+
+```
+
+## Republicans {.smaller}
+
+```{r, echo = TRUE, message = FALSE, error = FALSE}
+add_jitter <- function(data, jitter_amount = 0.1) {
+  data %>%
+    group_by(.category, prepost) |>
+    mutate(
+      # Add random jitter to x-coordinate
+      .category_jittered = as.numeric(.category) + ifelse(prepost == "Post Election", 0.1, 0)) |>
+    ungroup()
+}
+
+# Apply jittering to your data
+plot_dat_jittered <- add_jitter(plot_dat, jitter_amount = 0.1)
+
+
+plot_ly(plot_dat_jittered |> filter(party_identification3 == "Republican"), 
+             x = ~ .category_jittered, 
+             y = ~.value,
+             color = ~prepost,
+             type = 'scatter',
+             mode = 'markers',
+             marker = list(size = 7, opacity = 0.5),
+             error_y = list(
+               type = "data",
+               symmetric = FALSE,
+               array = ~(.upper - .value),
+               arrayminus = ~(.value - .lower),
+               width = 1
+             ),
+             text = ~paste("Group:", prepost,
+                          "<br>Category:", .category,
+                          "<br>Value:", round(.value, 4),
+                          "<br>CI: [", round(.lower, 4), ", ", round(.upper, 4), "]"),
+             hovertemplate = "%{text}<extra></extra>"
+) %>%
+  layout(
+    title = "Difference in Estimates. Independents",
+    xaxis = list(title = "Category",
+                        tickmode = "array",
+      tickvals = sort(unique(as.numeric(plot_dat_jittered$.category))),
+      ticktext = sort(unique(as.numeric(plot_dat_jittered$.category)))),
+    yaxis = list(title = "Difference Estimate"),
+    hovermode = 'closest',
+    showlegend = TRUE
+  )
+
+```
+
+## Model Comparisons {.smaller}
+
+- **Leave-one-out Cross-Validation**. Removes each observation from the dataset, refits the model on the remaining **n-1** observations, and evaluates how well the refitted model predicts the held-out observation. Use the `loo` package.
+
+```{r, echo = TRUE, message = FALSE, error = FALSE}
+loo1 <- loo(multinomial_model)
+loo2 <- loo(ordinal_model)
+loo_compare(loo1, loo2) 
+```
+
+## Model Comparisons {.smaller}
+
+- **Likelihood Ratio Test**. Compare the fit of the two models directly, using a likelihood ratio test.
+
+```{r, echo = TRUE, message = FALSE, error = FALSE}
+model_multi <- nnet::multinom(trustPresident ~ as.factor(party_identification3)* as.factor(prepost), data = df)
+model_ord <-   MASS::polr(as.factor(trustPresident)~ as.factor(party_identification3)* as.factor(prepost), data = df, Hess = TRUE)
+lmtest::lrtest(model_multi, model_ord)
+``` 
+
+## `VGAM` {.smaller}
+
+```{r, echo = TRUE, message = FALSE, error = FALSE}
+library(VGAM)
+# Unrestricted model (parallel = FALSE)
+model_unrestricted <- vglm(as.ordered(trustPresident) ~ 
+                          as.factor(party_identification3) * as.factor(prepost), 
+                          family = cumulative(parallel = FALSE), 
+                          data = df)
+
+# Restricted model (parallel = TRUE) 
+model_restricted <- vglm(as.ordered(trustPresident) ~ 
+                        as.factor(party_identification3) * as.factor(prepost), 
+                        family = cumulative(parallel = TRUE), 
+                        data = df)
+lrtest(model_unrestricted, model_restricted)
+```
+
+
+
+## Summary  {.smaller}
+
+- There is some evidence to suggest that the multinomial logit fits better than the ordered logit in this application.
+
+- The multinomial model relaxes the parallel lines assumption.
+
+- It generally fits the data better than the ordered logit model.
+
+- Though -- substantively -- the model differences don't seem too large.
+
+
+## Independence of Irrelevant Alternatives  {.smaller}
+
+- The multinomial models make a relatively strong assumption about the choice process
+
+- It is called the **Independence of Irrelevant Alternatives** (IIA) assumption. The probability of odds contrasting two choices are unaffected by additional alternatives
+
+- McFadden (cited on Long 1997, p. 182) introduces the now classic **Red Bus/Blue Bus** example
+
+## Transportation  {.smaller}
+
+- The logic.....
+
+- Say there are two forms of transportation available in a city: The city bus and driving one's car. 
+
+- If an individual is indifferent to these approaches, taking advantage of both about equally, assume that $p(car)=0.5$ and $p(bus)=0.5$, 
+
+- The odds of taking the bus relative to the car is 1:1. The buses in the city are all red
+
+## Irrelevance?  {.smaller}
+
+- The city introduces a bus on this individual's route 
+
+- The only difference is that the bus is blue
+
+- Because the blue bus is identical (with the exception of the color), the individual probably doesn't prefer it over the red bus
+
+- The only way that IIA holds is if the probability of $p(car)=0.33, p(Red)=0.33, p(Blue)=0.33$
+
+## Irrelevance?  {.smaller}
+
+- This  doesn't make much sense; it implies that the individual will ride the bus over driving -- the probability of taking \emph{a bus} is 2/3
+
+- Logically, what we should observe is that $p(drive)=0.5, p(red)=0.25, p(blue)=0.25$. This involves a violation of IIA 
+
+- The only way for IIA to hold is if the associated probabilities change and $p(car)=p(red)$ 
+
+- But we are unlikely to observe this if we logically think about the problem
+
+## Tests  {.smaller}
+
+- The odds of selecting the red bus, relative to the car should be the same regardless of whether blue buses are available 
+
+- We need to make the IIA in both the multinomial and conditional logit models
+
+- Voting (Bush and Clinton 1992)
+
+- The assumption holds that the odds (i.e., the coefficients) should be the same in both models. This can be tested by using a "Hausman test" 
+- The test involves comparing the full multinomial model to one where outcome categories are dropped from the analysis
+
+
+## The Hausman Test {.smaller}
+- $H_0$: IIA holds
+- $p < 0.05$: IIA violated (use an alternative model, like a nested logit)
+- $p > 0.05$: IIA supported (multinomial logit is appropriate)
+
+```{r, echo = TRUE, message = FALSE, error = FALSE}
+library(mlogit)
+
+### Declare MLOGIT data
+df_mlogit <- mlogit.data(df, 
+                         choice = "trustPresident", 
+                         shape = "wide")
+model_full <- mlogit(trustPresident ~ 1 | party_identification3 + prepost, 
+                     data = df_mlogit)
+
+df_subset <- subset(df, trustPresident != 2)  # Drop a category, say 2
+
+### Declare MLOGIT data
+df_subset_mlogit <- mlogit.data(df_subset, 
+                                choice = "trustPresident", 
+                                shape = "wide")
+
+model_subset <- mlogit(trustPresident ~ 1 | party_identification3 + prepost, 
+                       data = df_subset_mlogit)
+
+# Hausman test, Compare the models
+hausman_test <- hmftest(model_full, model_subset)
+print(hausman_test)
+```
+
+
+
