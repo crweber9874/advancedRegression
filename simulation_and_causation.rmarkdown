@@ -1,0 +1,1210 @@
+---
+title: "Causal Inference, Graphs and Simulation"
+date: "`r Sys.Date()`"
+author: "Christopher Weber"
+organization: "University of Arizona"
+email: "chrisweber@arizona.edu"
+format: 
+  revealjs:
+    css: style_pres.css
+title-block-banner: "#378DBD"  # Custom background color
+---
+
+
+
+## Estimation
+
+
+
+```{r, echo = TRUE}
+library(dplyr)
+load("~/Dropbox/github_repos/teaching/POL683_Fall24/advancedRegression/vignettes/dataActive.rda")
+dat = dataActive %>% 
+  mutate(
+    support_protest = ifelse(violent >3, 1, 0)
+  ) %>%
+  dplyr::select(support_protest, VIOLENT)
+# Estimate logit
+logitModel = glm(support_protest ~ VIOLENT, data = dat, family = binomial(link = "logit")) 
+# Estimate probit
+probitModel = glm(support_protest ~ VIOLENT, data = dat, family = binomial(link = "probit")) 
+```
+
+
+
+## 
+
+
+
+```{r}
+summary(logitModel) %>% print()
+```
+
+
+
+## 
+
+
+
+```{r}
+summary(probitModel) %>% print()
+```
+
+
+
+## Identical Predictions
+
+
+
+```{r, echo = TRUE}
+# Create a dataset
+pred.data = expand.grid(VIOLENT = c(0, 1)) %>% as.data.frame()
+
+predictions_logit = predict(logitModel, pred.data,  type = "response") %>% 
+  data.frame() %>%
+  mutate(
+    violent = c(0, 1)
+  ) 
+
+predictions_probit = predict(probitModel, pred.data,  type = "response") %>% 
+  data.frame() %>%
+  mutate(
+    violent = c(0, 1)
+  ) 
+
+
+# The difference
+cat("The treatment effect for the logit model is:\n",
+predictions_logit[1,1] - predictions_logit[2,1], "\n",
+"The treatment effect for the probit model is:\n",
+predictions_probit[1,1] - predictions_probit[2,1]
+
+)
+```
+
+
+
+## Nonlinear Regression
+
+-   A different approach to the same probolem, a binary dependent variable
+
+-   The log log likelihood
+
+$$  log(p(D|\theta))=\sum_{n=1}^Nlogp(y_n|\theta)=\sum_{n=1}^N[y_n log\theta+(1-y_n)log(1-\theta)] $$
+
+-   If $\theta$ is bound between 0 and 1. But our regression model requires a continuous depenendent variable,
+
+-   First, convert the probability to an odds
+
+$${{\theta_i}\over{1-\theta_i}}$$
+
+-   **This frees the upper bound restriction.**
+
+## Nonlinear Regression
+
+-   Then the lower bounds
+
+-   The transformation is an "odds" that may approach $\infty$. But, we still have the zero restriction
+
+-   Take the natural logarithm of the odds, resulting in the **log odds**, and the logit transformation
+
+$$\eta_i=log[{{\theta_i)}\over{1-\theta_i}}]$$
+
+$$\eta \in [-\infty, \infty]$$
+
+## 
+
+
+
+```{r, echo = TRUE, warning = FALSE, message = FALSE}
+load("~/Dropbox/github_repos/teaching/POL683_Fall24/advancedRegression/vignettes/dataActive.rda")
+dat = dataActive %>% mutate( support_protest = ifelse(violent >3, 1, 0)) %>%
+  dplyr::select(support_protest, VIOLENT)
+# Estimate logit
+logitModel = glm(support_protest ~ VIOLENT, data = dat, 
+                 family = binomial(link = "logit")) 
+logitModel
+```
+
+
+
+## Simulation
+
+-   It's often useful to simulate the distribution of the predicted probabilities
+
+-   We do this by first estimating our statistical model
+
+-   Then develop a routine to examine "what happens" when we change the values of our independent variables
+
+-   We can leverage this paradigm for other purpoposes, such as generating treatment effects, or marginal effects, or testing the robustness of our findings
+
+## Simulation, $var(\theta)$
+
+-   Let's do a few things here
+
+-   We'll use the variance-covariance matrix of the parameters to simulate the distribution of the predicted probabilities
+
+-   Here's how we'll do it
+
+## The Variance Covariance Matrix
+
+-   The Hessian $$H(\theta)={{\partial^2 ln L(\theta) }\over{\partial \theta \partial \theta^T}}$$
+
+-   What does the second derivative tell us?
+
+-   The negative of the expected value of the Hessian is the information matrix
+
+$$I(\theta)=-E(H(\theta))$$.
+
+-   Finally, the inverse of the information matrix is the variance-covariance matrix for the parameters
+
+$$V(\theta)=[-E(H(\theta))]^{-1}$$.
+
+-   If we have the variance-covariance matrix, we can simulate draws from a multivariate normal distribution
+
+-   Uncertainty is captured by treating the parameters as random, not fixed
+
+## $\texttt{vcov()}$
+
+
+
+```{r, echo = TRUE, warning = FALSE, message = FALSE}
+library(MASS)
+variance = vcov(logitModel)
+variance
+```
+
+
+
+## Clarification
+
+-   $\texttt{vcov(logitModel)}$ returns the variance-covariance matrix of the parameters
+
+-   $\textbf{mvrnorm(1000, coef(logitModel), vcov(logitModel))}$ simulates 1000 draws from a multivariate normal distribution
+
+-   If the predictions are $X\beta$, then the predicted probabilities
+
+-   $\hat{y}_{i,k} = X_{i,j} \beta_{j,k}$.
+
+-   And if we're dealing with a logit or probit, $plogis(\hat{y}_{i,k})$ or $pnorm(\hat{y}_{i,k})$
+
+## In Practice
+
+
+
+```{r, echo = TRUE, warning = FALSE, message = FALSE}
+library(MASS)
+library(plotly)
+library(tidyr)
+variance = vcov(logitModel)
+simval = mvrnorm(1000, coef(logitModel), variance)
+variance  
+head(simval, 10)
+```
+
+
+
+## The Design Matrix
+
+$$\begin{bmatrix}
+y_{1}= & b_0+ b_1 x_{1} \\
+y_{2}= & b_0+ b_1 x_{2} \\
+y_{3}= &  b_0+ b_1 x_{3}\\
+y_{4}= &  b_0+ b_1 x_{4}\\
+\vdots\\
+y_{n}= &  b_0+ b_1 x_{n}\\
+\end{bmatrix}$$
+
+## The Design Matrix
+
+-   The design matrix is the matrix of the independent variables
+
+-   The first column is a column of ones, the intercept
+
+-   $X\beta$ is the matrix multiplication of the design matrix and the coefficients
+
+## Post-Estimation
+
+-   $X\beta$ is the matrix multiplication of the design matrix and the coefficients
+
+-   After estimation, we can generate **our own** design matrix, which we'll use to generate predictions
+
+-   For $X\beta$ to have a solution, we need to have the same number of columns in the design matrix as we have coefficients (see matrix algebra chapter)
+
+-   Rules of matrix multiplication. The number of columns in $X$ must equal the number length of the coefficient vector
+
+-   Conformable matrices
+
+## Plotly
+
+-   The probability of support in the "violence" frame
+
+
+
+```{r}
+library(dplyr)
+library(plotly)
+
+# Assuming logitModel is already defined and contains the coefficients
+simval %>%
+  as.data.frame() %>%
+  mutate(
+    y = plogis(simval[,1] +
+                 simval[,2]))%>%
+  plot_ly() %>%
+  add_histogram(x = ~y, nbinsx = 100, name = "Predicted Probabilities") %>%
+  layout(
+    title = "Predicted Probabilities (violent)",
+    xaxis = list(title = "Probability"),
+    yaxis = list(title = "Frequency")
+  )
+
+```
+
+
+
+## 
+
+
+
+```{r}
+library(dplyr)
+library(plotly)
+
+# Assuming losgitModel is already defined and contains the coefficients
+simval %>%
+  as.data.frame() %>%
+  mutate(
+    y = plogis(simval[,1] ))%>%
+  plot_ly() %>%
+  add_histogram(x = ~y, nbinsx = 100, name = "Predicted Probabilities", color = "orange") %>%
+  layout(
+    title = "Predicted Probabilities (not specified)",
+    xaxis = list(title = "Probability"),
+    yaxis = list(title = "Frequency")
+
+  )
+```
+
+
+
+## ggplot
+
+-   And in ggplot
+
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+library(dplyr)
+library(ggplot2)
+simval %>%
+  as.data.frame() %>%
+  mutate(
+    y = plogis(simval[,1] )) %>%
+  ggplot(aes(x = y)) +
+  geom_histogram(bins = 100, fill = "purple", alpha = 0.7) +
+  labs(
+    title = "Predicted Probabilities",
+    x = "Probability",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+```
+
+
+
+## Violent versus Not-Specified
+
+-   Perhaps we with to compare, a treatment effect?
+
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+simval %>%
+  as.data.frame() %>%
+  mutate(
+    # This is clunky, use matrix
+    y_violent = plogis(logitModel$coefficients["(Intercept)"] + logitModel$coefficients["VIOLENT"] * VIOLENT),
+    y_not_specified = plogis(logitModel$coefficients["(Intercept)"] + logitModel$coefficients["VIOLENT"] * 0)
+  ) %>% head()
+```
+
+
+
+## Violent versus Not-Specified
+
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+library(dplyr)
+library(ggplot2)
+
+# Assuming simval is a matrix and contains the necessary variables
+ simval %>%
+  as.data.frame() %>%
+  mutate(
+    y_violent = plogis(as.matrix(simval) %*% c(1, 1)),
+    y_notviolent = plogis(as.matrix(simval) %*% c(1, 0))
+  ) %>%
+  as.data.frame()  %>% 
+  ggplot() +
+  geom_histogram( aes(x = y_violent, fill = "Violent"), bins = 100, alpha = 0.5, position = "identity") +
+  geom_histogram( aes(x = y_notviolent, fill = "Not Violent"), bins = 100, alpha = 0.5, position = "identity") +
+  scale_fill_manual(values = c("Violent" = "blue", "Not Violent" = "red")) +
+  labs(
+    title = "Predicted Probabilities",
+    x = "Probability",
+    y = "Frequency",
+    fill = "Category"
+  ) +
+  theme_minimal()
+  
+```
+
+
+
+## Marginal Effects
+
+-   This is a "simple" research design. The "treatment effect" is simply the difference between the treatment and control conditions
+
+-   In the regression, the dummy variable for the treatment condition is the difference between the two conditions
+
+-   The logic can be extended further, the marginal effect. What is the change in $y$ for every change in $x$?
+
+-   It can often be useful to calculate the marginal effect of a variable -- i.e., the change in probabilities for a one unit increase in the variable
+
+## Marginal Effects
+
+$\Delta x_i =x_{i,1}-x_{i,0}$
+
+-   For y, the marginal value is then
+
+$\Delta y=f\left(x_{i,1},\ldots,x_n \right)-f\left(x_{i,0},\ldots,x_n \right)$
+
+-   And the marginal effect is (if a unit change, then the denominator is 1):
+
+$\frac{\Delta y}{\Delta x}=\frac{f\left(x_{i,1},\ldots,x_n \right)-f\left(x_{i,0},\ldots,x_n \right)}{x_{i,1}-x_{i,0}}$
+
+## Marginal Effects
+
+(1) Calculate the probability that $y=1$ when $x=0$
+
+(2) Calculate the probability that $y=1$ when $x=1$
+
+(3) Subtract (1) from (2)
+
+## Marginal Effects
+
+-   We might simulate a confidence interval as well, by modifying the recipe
+
+(1) Calculate the probability that $y=1$ when $x=0$ by drawing $K$ draws from the multivariate normal
+
+(2) Calculate the probability that $y=1$ when $x=1$ by drawing $K$ draws from the multivariate normal
+
+(3) Subtract (1) from (2), which will now yield a distribution
+
+## Marginal Effects
+
+
+
+```{r}
+load("~/Dropbox/github_repos/teaching/POL683_Fall24/advancedRegression/vignettes/dataActive.rda")
+dat = dataActive %>% mutate( support_protest = ifelse(violent >3, 1, 0)) %>%
+ dplyr::select(support_protest, moral_individualism, sdo)
+# Estimate logit
+logitModel = glm(support_protest ~ moral_individualism + sdo + moral_individualism:sdo, data = dat, 
+                 family = binomial(link = "logit")) 
+logitModel %>% summary()
+```
+
+
+
+## Mediation
+
+-   Moral individualism, ("Any person who is willing to work hard has a good chance of succeeding"; "If people work hard, they almost always get what they want")
+
+-   Social dominance is a scale developed by Sidanius and Pratto (1999). (e.g.,"Some groups of people are simply inferior to other groups" ; "It's probably a good thing that certain groups are at the top and other groups are at the bottom" )
+
+-   *Are moral individualists, and those who tolerate (or even prefer) group based inequality, more likely to support protesting a democratic election?*
+
+## Mediation
+
+$$
+y_i = \beta_0 + \beta_1 x_{1i} + \beta_2 x_{MI,i} + \beta_3 x_{SDO,i}x_{2i} + \beta_4 x_{SDO,i}x_{MI,i}x_{SDO,i}  + \epsilon_i
+$$
+
+## 
+
+
+
+```{r, echo = TRUE}
+library(dplyr)
+library(ggplot2)
+# Extract the simulated parameters ##
+variance = vcov(logitModel)
+# A 1000 x 4 matrix
+simval = mvrnorm(1000, coef(logitModel), variance)
+# Create the design matrix
+# max.sdo
+max.sdo = quantile(dat$sdo, 0.975)
+# min.sdo
+min.sdo = quantile(dat$sdo, 0.025)
+# max ind
+max.mi = quantile(dat$moral_individualism, 0.975)
+# min ind
+min.mi = quantile(dat$moral_individualism, 0.025)
+
+# A 4 x 3 design matirx
+design.matrix = expand.grid(intercept = 1, 
+                            moral_individualism = c(min.mi, max.mi), 
+                            sdo = c(min.mi, max.mi)) %>%
+                as.data.frame() %>%
+                mutate(interaction = moral_individualism * sdo) %>%
+  as.matrix()
+print(design.matrix)
+
+print("Keep track of the matrix dimensions. Each column now represents different combinations of the independent variable")
+simulations = design.matrix %*% t(simval) %>% t() %>% plogis()  %>% as.data.frame()
+names(simulations) = c("min.mi.min.sdo", "min.mi.max.sdo", "max.mi.min.sdo", "max.mi.max.sdo")
+```
+
+
+
+## 
+
+
+
+```{r, echo = TRUE}
+head(simulations)
+```
+
+
+
+## 
+
+
+
+```{r, echo = TRUE}
+datLong = simulations %>% 
+  pivot_longer(everything(), names_to = "combination", values_to = "probability") 
+datLong %>% head()
+```
+
+
+
+## 
+
+
+
+```{r, echo = FALSE}
+datLong = simulations %>% 
+  pivot_longer(everything(), names_to = "combination", values_to = "probability") 
+datLong %>% 
+  group_by(combination) %>%
+  summarize(
+    mean = mean(probability),
+    lower = quantile(probability, 0.025),
+    upper = quantile(probability, 0.975)
+  ) %>%
+  ggplot(aes(x = combination, y = mean)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.1) +
+  labs(
+    title = "Predictions",
+    x = "Combination",
+    y = "Probability of Supporting Protest"
+  ) +
+  coord_flip() +
+  theme_minimal()
+```
+
+
+
+## The Normal Distribution
+
+-   The linear model
+
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+set.seed(123)
+n <- 100
+x <- rnorm(n, 0, 1)
+y <- 0.25 + 0.25 * x + rnorm(n, 0, 0.5)
+
+intercept_grid <- seq(0, 1, length.out = 100)
+slope_grid <- seq(0, 1, length.out = 100)
+sigma <- 1  # Assume known sigma for simplicity
+
+# initialize the likelihood matrix. We'll fill this in as we go.
+# Basically we're going to calculate the likelihood for each combination of intercept and slope
+likelihood <- matrix(0, nrow = length(intercept_grid), ncol = length(slope_grid))
+
+for (i in 1:length(intercept_grid)) {
+  for (j in 1:length(slope_grid)) {
+    intercept <- intercept_grid[i]
+    slope <- slope_grid[j]
+    y_pred <- intercept + slope * x
+    likelihood[i, j] <- prod(dnorm(y, mean = y_pred, sd = sigma))
+  }
+}
+
+  # Plot in 3d
+ dat %>% plot_ly(x = ~intercept_grid, y = ~slope_grid, z = ~likelihood) %>%
+  add_surface(type = "scatter3d",  colorscale = list(c(0,1),c("lightgrey","black")))  %>%
+  layout(
+    scene = list(
+      xaxis = list(title = 'Intercept'),
+      yaxis = list(title = 'Slope'),
+      zaxis = list(title = 'Likelihood'),
+      scene = list(
+      )
+    )
+    )
+  
+```
+
+
+
+## The Posterior Distribution
+
+-   We can also expand our definition of "simulation" to include the posterior distribution
+
+-   The posterior distribution is the distribution of the parameters given the data, $p(\theta|D)$
+
+-   The **Likelihood** $\times$ **Prior**
+
+$$
+y_{i} \sim Normal(\mu_i, \sigma)\\
+\mu_i = \beta_0 + \beta_1 (x_i - \bar{x})\\
+\beta_0 \sim Normal(0, 10)\\
+\beta_1 \sim Normal(0, 10)\\
+\sigma \sim Uniform(0, 50)
+$$
+
+## The Posterior Distribution
+
+-   The $\texttt{brms}$ package
+
+
+
+```{r, echo = TRUE, warning = FALSE, message = FALSE}
+library(brms)
+
+n <- 100
+x <- rnorm(n, 0, 1)
+y <- 2 + 3 * (x - mean(x)) + rnorm(n, 0, 1)
+data <- data.frame(x = x, y = y)
+
+# Define the model formula
+formula <- bf(y ~ x - mean(x))
+
+# Specify the priors
+priors <- c(
+  prior(normal(0, 10), class = "b"),
+  prior(normal(0, 10), class = "Intercept"),
+  prior(uniform(0, 50), class = "sigma")
+)
+
+# Fit the model
+fit <- brm(formula, data = data, 
+           prior = priors, chains = 4, 
+           iter = 2000, warmup = 1000)
+
+# Summarize the results
+summary(fit)
+
+# Plot the results
+plot(fit)
+
+```
+
+
+
+### Real Data
+
+
+
+```{r, echo = TRUE, warning = FALSE, message = FALSE}
+library(brms)
+load("~/Dropbox/github_repos/teaching/POL683_Fall24/advancedRegression/vignettes/dataActive.rda")
+dat = dataActive 
+dat$authoritarianism = scale(dat$authoritarianism)
+dat$sdo = scale(dat$sdo)
+dat$college = ifelse(dat$educ == "4-year" | dat$educ == "Post-grad", 1, 0)
+                       
+formula <- bf(sdo ~ authoritarianism + college + authoritarianism:college)
+
+# Specify the priors
+priors <- c(
+  prior(normal(0, 10), class = "b"),
+  prior(normal(0, 10), class = "Intercept"),
+  prior(uniform(0, 100), class = "sigma")
+)
+
+# Fit the model
+fit <- brm(formula, data = dat, prior = priors, chains = 1, iter = 2000, warmup = 1000)
+
+summary(fit)
+
+# Plot the results
+plot(fit)
+
+```
+
+
+
+### 
+
+
+
+```{r, echo = TRUE, warning = FALSE, message = FALSE}
+library(tidybayes)
+library(dplyr)
+library(ggplot2)
+library(modelr)
+# fit <- brm(formula, data = dat, prior = priors, chains = 1, iter = 2000, warmup = 1000)
+
+dat %>% data_grid( authoritarianism = seq_range(authoritarianism, n = 30),
+                   college = c(0, 1)) %>%
+  add_epred_draws(fit) %>%
+  group_by(authoritarianism, college) %>%
+  mutate(college = ifelse(college == 1, "College", "Less than College")) %>%
+  summarize(
+    .value = mean(.epred),
+    .lower = quantile(.epred, 0.025),
+    .upper = quantile(.epred, 0.975)
+  ) %>%
+  ggplot(aes(x = authoritarianism, y = .value, color = factor(college))) +
+  geom_line() +
+  geom_ribbon(aes(ymin = .lower, ymax = .upper), alpha = 0.3, color= "grey") +
+  facet_wrap(~college) +
+  labs(
+    x = "Authoritarianism",
+    y = "Social Dominance Orientation",
+    color = "Education",
+    title = "Predicted Social Dominance Orientation \nby Authoritarianism and Education"
+  ) + 
+  theme_minimal()
+```
+
+
+
+## Steps to Building a Model
+
+-   Build a scientific model. This is the theoretical model that you believe underlies the data. This is often represented in a DAG
+
+-   Build a statistical model. How might we use a statistical model to create estimands -- parameters that we'll estimate with our data?
+
+-   Estimation, Simulation and Prediction. Here we'll join the statistical and scientific model, using the data to test associations and causal processes
+
+-   An example
+
+## The DAG
+
+Here's the simple model:
+
+
+
+```{r, fig.width=4, fig.height=4, echo = FALSE, warning = FALSE, message = FALSE}
+library(ggdag)
+
+dagify(conservatism ~ age,
+       labels = c(
+  "conservatism" = "Political Conservatism",
+  "age" = "Age")) %>% ggdag(text = FALSE, use_labels = "label")  + 
+  theme_dag()
+```
+
+
+
+## The Confound
+
+-   The Fork
+
+Here's the simple model:
+
+
+
+```{r, fig.width=4, fig.height=4, echo = FALSE, warning = FALSE, message = FALSE}
+# 
+library(ggdag)
+
+dagify(conservatism ~ household + education ,
+       household ~ education + age,
+       labels = c(
+  "conservatism" = "Political Conservatism",
+  "household"    = "Personal Wealth",
+  "education"       = "Post Secondary Education",
+  "age" = "Age")) %>% 
+  ggdag(text = FALSE, use_labels = "label")  + theme_dag()
+```
+
+
+
+## The Confound
+
+
+
+```{r, fig.width=6, fig.height=6, echo = FALSE, warning = FALSE, message = FALSE}
+
+library(ggdag)
+dagify(conservatism ~ household + education ,
+       household ~ education,
+       labels = c(
+  "conservatism" = "Political Conservatism",
+  "household"    = "Personal Wealth",
+  "education"       = "Post Secondary Education",
+  "age" = "Age")) %>% ggdag(text = FALSE, use_labels = "label")  + theme_dag()
+```
+
+
+
+## 
+
+
+
+```{r, fig.width=6, fig.height=6, echo = TRUE, warning = FALSE, message = FALSE}
+# Imagine a population that in which 30% have a college or post-graduate degree
+education = rbinom(1000, 1, 0.30)
+# predict personal wealth
+wealth = 1 + 0.8*education + rnorm(1000, 0, 0.5)
+political_conservatism = 1 + 0.3*wealth - 0.5*education + rnorm(1000, 0.5)
+# Notice the change
+lm(political_conservatism ~ wealth) 
+lm(political_conservatism ~ wealth + education) 
+#
+coef(lm(political_conservatism ~ wealth + education))["wealth"] -
+coef(lm(political_conservatism ~ wealth))["wealth"]
+```
+
+
+
+## 
+
+
+
+```{r, fig.width=6, fig.height=6, echo = FALSE, warning = FALSE, message = FALSE}
+library(plotly)
+
+simulate_difference <- function(n_simulations = 1000, n_samples = 1000, p_education = 0.30) {
+  differences <- numeric(n_simulations)
+  
+  for (i in 1:n_simulations) {
+    # Simulate data
+    education <- rbinom(n_samples, 1, p_education)
+    wealth <- 1 + 0.8 * education + rnorm(n_samples, 0, 0.5)
+    political_conservatism <- 1 + 0.3 * wealth - 0.5 * education + rnorm(n_samples, 0, 0.5)
+    
+    model1 <- lm(political_conservatism ~ wealth)
+    model2 <- lm(political_conservatism ~ wealth + education)
+    
+    # Calculate the difference in the coefficient of wealth
+    diff <- coef(model2)["wealth"] - coef(model1)["wealth"]
+    differences[i] <- diff
+  }
+  
+  return(differences)
+}
+
+# Run the simulation
+differences <- simulate_difference()
+
+plot_ly(x = ~differences, type = "histogram") %>%
+  layout(title = "Differences in Coefficient of Wealth, conditioning on Education",
+         xaxis = list(title = "Difference"),
+         yaxis = list(title = "Count"))
+
+```
+
+
+
+## The Confound
+
+-   Again, we might simulate data to examine the consequences of estimation. Again, the data reported previously were synthetic
+
+-   If there is a confounder, we should condition on that confounder; otherwise, our results will be "biased"
+
+-   Bias is just the difference between "truth" (how we set up the simulation) and the estimate
+
+-   There are three other types of relationships to consider; here are two we often encounter: The mediator (the chain or pipe) and the collider (the inverted fork)
+
+## The Mediator (Pipe or Chain)
+
+-   $x$ can affect $y$ in a couple ways
+
+-   One is $x\rightarrow m \rightarrow y$
+
+-   Another is $x \rightarrow y$
+
+
+
+```{r, fig.width=4, fig.height=4, echo = TRUE, warning = FALSE, message = FALSE}
+dagify(m ~x , y~ m + x) %>% ggdag()  + theme_dag()
+```
+
+
+
+## An Introduction to Causal Inference
+
+-   The "treatment effect"
+
+-   Causal explanations involve a statement about how units are influenced by a particular treatment or intervention
+
+-   The $\textbf{counterfactual}$: How would an individual respond to a treatment, compared to an identical circumstance where that individual did not receive the treatment (Morton and Williams 2010)?
+
+## An Introduction to Causal Inference
+
+-   For this reason, the exercise involves inferences about \emph{within} unit effects
+
+$$\delta_i = Y_{i,1}-Y_{i,0}$$
+
+## An Introduction to Causal Inference
+
+-   The counterfactual is unobservable
+
+-   The **Fundamental Problem of Causal Inference**.
+
+-   $\delta_i$ is not attainable, because the potential outcome is never directly observed!
+
+## An Introduction to Causal Inference
+
+-   Groups of individuals -- or units -- where some degree of control is exercised
+
+$$E(\delta_i)=E(Y_{i,T}-Y_{i,C})=E(Y_{i,T})-E(Y_{i,C})$$
+
+## The Do Operator
+
+-   The *do* operator
+
+-   Imagine two worlds (datasets); one where everyone has "high wealth" and one where everyone has "low wealth"
+
+-   Use thise **data** as the design matrix. Then we perhaps just average the predicted score, political conservatism in two "worlds," one where everyone is "high wealth" and the other where everyone is "low wealth"
+
+Use these data "worlds," in conjunction with the statistical model to create predictions and causal estimates
+
+## 
+
+
+
+```{r, fig.width=4, fig.height=4, echo = TRUE, warning = FALSE, message = FALSE}
+education <- rbinom(2000, 1, 0.3)
+wealth <- 1 + 0.8 * education + rnorm(2000, 0, 0.5)
+
+political_conservatism <- 1 + 0.3 * wealth - 0.5 * education + rnorm(2000, 0, 1)
+synthetic_data = data.frame(wealth, political_conservatism, education)
+synthetic_data %>% head()
+```
+
+
+
+## 
+
+
+
+```{r, fig.width=4, fig.height=4, echo = TRUE, warning = FALSE, message = FALSE}
+my_model = lm(political_conservatism ~ wealth + education, data = synthetic_data)
+summary(my_model)
+```
+
+
+
+## 
+
+
+
+```{r, fig.width=4, fig.height=4, echo = TRUE, warning = FALSE, message = FALSE}
+data1 = synthetic_data %>% mutate(wealth = 0)
+data2 = synthetic_data %>% mutate(wealth = 1)
+# The treatment effect is:
+predict(my_model, data2)  %>% mean() - predict(my_model, data1) %>% mean()
+```
+
+
+
+## The Bootstrap
+
+-   Another means to simulate uncertainty
+
+-   Sample repeatedly from the data
+
+-   Estimate the treatment effect at each trial
+
+-   Summarize the distributions
+
+## The Bootstrap
+
+
+
+```{r, echo = TRUE, warning = FALSE, message = FALSE}
+library(dplyr)
+library(boot)
+# Define a function for bootstrapping
+bootstrap_treatment_effect <- function(data, indices) {
+  # Sample the data
+  sample_data <- data[indices, ]
+  my_model = lm(political_conservatism ~ wealth + education, data = sample_data)
+
+  # Create two worlds
+  data1 <- sample_data %>% mutate(wealth = 0)
+  data2 <- sample_data %>% mutate(wealth = 1)
+  
+  # Calculate the treatment effect
+  treatment_effect <- mean(predict(my_model, data2)) - mean(predict(my_model, data1))
+  
+  return(treatment_effect)
+}
+
+bootstrap_results <- boot(data = synthetic_data, statistic = bootstrap_treatment_effect, R = 100)
+
+mean = mean(bootstrap_results$t)
+lower = quantile(bootstrap_results$t, 0.025)
+upper = quantile(bootstrap_results$t, 0.975)
+
+cat("The average treatment effect is", mean, "\n")
+cat("The 95% confidence interval is", lower, "to", upper, "\n")
+
+```
+
+
+
+## 
+
+
+
+```{r}
+library(ggdag)
+dag <- dagify(
+  conservatism ~ moral_individualism + age + college,
+  moral_individualism ~ age + college,
+  college ~ age + geography,
+  labels = c(
+    "moral_individualism" = "MI",
+    "college" = "Knowledge",
+    "age" = "Age",
+    "conservatism" = "Conservatism",
+    "geography" = "zip"
+  )
+)
+ggdag(dag, text = FALSE, use_labels = "label") +
+  geom_dag_text(aes(label = label), alpha = 0.01, nudge_y = 0.2) +  # Adjust alpha for transparency
+  theme_dag()
+```
+
+
+
+## 
+
+-   In $\texttt{dagitty}$, we can use the $\texttt{adjustmentSets()}$ function to determine the appropriate adjustment sets for a given model.
+
+
+
+```{r, echo = TRUE}
+library(ggdag)
+library(dagitty)
+dag <- dagify(
+  conservatism ~ moral_individualism + age + college,
+  moral_individualism ~ age + college,
+  college ~ age + geography,
+  labels = c(
+    "moral_individualism" = "MI",
+    "college" = "Knowledge",
+    "age" = "Age",
+    "conservatism" = "Conservatism",
+    "geography" = "zip"
+  )
+)
+adjustment_sets <- adjustmentSets(dag, exposure = "college", outcome = "conservatism")
+adjustment_sets
+```
+
+
+
+
+##
+
+
+```{r, echo = TRUE}
+adjustment_sets <- adjustmentSets(dag, exposure = "age", outcome = "conservatism")
+adjustment_sets
+```
+
+
+
+## Two Causal Estimands
+
+-   Defining causal effects
+
+-   Examine the graph to formulate the appropriate statistic
+
+$$y_{conservatism} = \beta_0 + \beta_1 x_{age} + \epsilon$$
+
+$$y_{conservatism} = \gamma_0 + \gamma_1 x_{age} + \gamma_2 x_{college} + \epsilon$$
+
+## 
+
+
+
+```{r}
+library(brms)
+load("~/Dropbox/github_repos/teaching/POL683_Fall24/advancedRegression/vignettes/dataActive.rda")
+dat %>%
+  mutate(conservative = ifelse(ideo5 == "Very conservative"| ideo5 == "Conservative", 1, 0)) -> dat
+
+# Estimate the effect of age on conservatism
+model_age <- glm(conservative ~ age, data = dat, family = binomial("logit"))
+model_education <- glm(conservative ~ college + age, data = dat, family = binomial("logit"))
+model_age
+model_education
+```
+
+
+
+## 
+
+
+
+```{r, echo = TRUE}
+datYoung <- 
+  dat %>%
+  # replace all in age with 20
+  mutate(age = 20)  
+
+predYoung = predict(model_age, newdata = datYoung, type = "response") 
+
+datOld <-
+  dat %>%
+  # replace all in age with 80
+  mutate(age = 80) 
+
+predOld = predict(model_age,  newdata = datOld, type = "response")
+
+cat("The effect of going from 20 to 80 years old leads to ",
+round(
+  predOld %>% mean() - 
+  predYoung %>% mean(),
+  2)*100, "percentage point increase in identifying as conservative\n")
+```
+
+
+
+## 
+
+
+
+```{r, echo = TRUE}
+load("~/Dropbox/github_repos/teaching/POL683_Fall24/advancedRegression/vignettes/dataActive.rda")
+
+# the effect of going from 20 to 80; 
+datCollege <- 
+  dat %>%
+  # replace all in age with 20
+  mutate(college = 1)  %>%
+  # redundant, but just to be clear
+  mutate(age = age)
+
+predCollege = predict(model_education, newdata = datCollege, type = "response") 
+
+datNocollege <- 
+  dat %>%
+  # replace all in age with 20
+  mutate(college = 0)  %>%
+  # redundant, but just to be clear
+  mutate(age = age)
+
+predNone = predict(model_age,  newdata = datNocollege, type = "response")
+
+cat("The effect of going from no college to college years old leads to ",
+abs(round(
+  predCollege %>% mean() - 
+  predNone %>% mean(),
+  2)*100), "percentage point decrease in identifying as conservative\n")
+```
+
+
+
+## Appendix: Matrix Algebra Review
+
+-   Matrix representation of a system of equations
+-   Easier to visualize the relationship between the model and the data
+-   And tedious calculations are efficiently represented
+
+## Appendix: Matrix Algebra Review
+
+$$\begin{bmatrix}
+y_{1}= & b_0+ b_1 x_{Ideology,1}+b_2 x_{PID,1}\\
+y_{2}= & b_0+ b_1 x_{Ideology,2}+b_2 x_{PID,2}\\
+y_{3}= &  b_0+ b_1 x_{Ideology,3}+b_2 x_{PID,3}\\
+y_{4}= &  b_0+ b_1 x_{Ideology,4}+b_2 x_{PID,4}\\
+\vdots\\
+y_{n}= &  b_0+ b_1 x_{Ideology,n}+b_2 x_{PID,n}\\
+\end{bmatrix}$$
+
+## Vectors
+
+-   Single numbers are scalars
+-   Vectors are matrices with one single column or row
+-   Vectors are denoted with lowercase letters **b**
+
+## Some Operations
+
+-   If two matrices are equal, $\textbf{A}=\textbf{B}$, for $i=j,\forall i,j$
+
+-   A $\textbf{symmetric}$ matrix has the same off-diagonal matrix
+
+-   Squaring a matrix is the same as multiplying it by itself, $\textbf{A}^2=\textbf{A} \textbf{A}$
+
+-   An $\textbf{idempotent}$ matrix means that if we multiply a matrix by itself, this product is the original matrix, or $\textbf{A}^2=\textbf{A} \textbf{A}= \textbf{A}$
+
+## Some More Operations
+
+-- An $\textbf{identity}$ matrix, $\textbf{I}$ is like to multiplying a scalar by 1. So, $\textbf{A}I= \textbf{A}$.
+
+-   Addition (and Subtraction): $$
+    \tiny
+    \begin{bmatrix}
+    a_{11}&a_{12}&\cdots &a_{1n} \\
+    a_{21}&a_{22}&\cdots &a_{2n} \\
+    \vdots & \vdots & \ddots & \vdots\\
+    a_{n1}&a_{n2}&\cdots &a_{nn}
+    \end{bmatrix}+
+    \begin{bmatrix}
+    b_{11}&b_{12}&\cdots &b_{1n} \\
+    b_{21}&b_{22}&\cdots &b_{2n} \\
+    \vdots & \vdots & \ddots & \vdots\\
+    b_{n1}&b_{n2}&\cdots &b_{nn}
+    \end{bmatrix}=
+    \begin{bmatrix}
+    a_{11}+b_{11}&a_{12}+b_{12}&\cdots &a_{1n}+b_{1n} \\
+    a_{21}b_{21}&a_{22}+b_{22}&\cdots &a_{2n}+b_{2n} \\
+    \vdots & \vdots & \ddots & \vdots\\
+    a_{n1}+b_{n2}&a_{n2}+b_{n2}&\cdots &a_{nn}+b_{n}\\
+    \end{bmatrix}
+    $$
+
+## Even More Operations
+
+-   A matrix multiplied by a scalar is every element multiplied by that scalar
+-   Matrix multiplication is a bit more complicated (as is matrix inversion - more later)
+-   Both turn out to be quite valuable
+-   To multiply two matrices we have to multiply and add the *i*th row with the *j*th column.
+
+$$
+\begin{bmatrix}
+1&3 \\
+2&4\\
+\end{bmatrix}
+\begin{bmatrix}
+3&5 \\
+2&4\\
+\end{bmatrix}=
+\begin{bmatrix}
+1*3+3*2&1*5+3*4 \\
+2*3+4*2&2*5+2*4\\
+\end{bmatrix}
+$$
+

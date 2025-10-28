@@ -31,9 +31,10 @@ Explore the class slides and notes:
 [Fit and Ordered Logit and Probit] (https://rpubs.com/crweber9874/1229074)
 
 [Multicategory Models: The Multinomial Logit] (https://rpubs.com/crweber9874/1358605)
+
+[Count Models: Poisson and Negative Binomial] (https://rpubs.com/crweber9874/count)
+
 ## Additional Sections (Optional)
-
-
 
 * **Installation:** Instructions on how to set up the project locally.
 * **Usage:** Examples and explanations on how to use the project.

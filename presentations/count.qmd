@@ -1,0 +1,601 @@
+---
+title: "Count Models"
+subtitle: "Poisson, Negative Binomial, Zero-Inflation, and Hurdle Models"
+date: "`r Sys.Date()`"
+author: "Christopher Weber"
+organization: "University of Arizona"
+email: "chrisweber@arizona.edu"
+format: 
+  revealjs:
+    theme: simple   
+    slide-number: true
+    toc: false
+    toc-depth: 2
+    code-fold: true
+    code-summary: "Show/Hide Code"
+    transition: fade
+    center: true
+    width: 1200
+    height: 800
+    slide-level: 2
+    navigation-mode: linear
+    self-contained: false
+    css: styles.css
+title-block-banner: "#378DBD"  
+---
+
+## Introduction  {.smaller}
+
+-   This lecture follows Long (1997, Chapters 7-8).
+
+-   Many variables in the social sciences consist of integer counts.
+
+ - E.g., number of times a candidate runs for office, frequency of conflict, number of terror attacks, number of war casualties, number of positive statements about a candidate, number of homicides in a city, etc.
+
+-   Least squares is inappropriate for the reasons we've already discussed: $\textbf{Nonlinearity, nonadditivity and heteroskedasticity}$.
+
+-  Instead, we need models that are designed to handle count data.
+
+-  Starting with the most straightforward, let's consider the **Poisson Distribution** and by extension, the **Poisson Regression Model**.
+
+- Then, we'll extend the model to the **Negative Binomial Regression Model** to account for overdispersion.
+
+## The Poisson Distribution  {.smaller}
+
+- The **Poisson Distribution** is governed by one parameter, $\mu$, commonly called the "rate parameter."
+
+- The variance of the **Poisson Distribution** is also governed by $\mu$.
+
+$$p(y|\mu)={{exp(-\mu)\mu^y}\over{y!}}$$
+
+## The Poisson Distribution  {.smaller}
+
+```{r}
+plot(dpois(c(0:20),0.12), type="l", main="mu=0.12")
+```
+
+##  {.smaller}
+```{r}
+plot(dpois(c(0:20),1), type="l", main="mu=1")
+```
+
+##  {.smaller}
+```{r}
+plot(dpois(c(0:20),10), type="l", main="mu=10")
+```
+
+##  {.smaller}
+```{r}
+plot(dpois(c(0:20),100), type="l", main="mu=100")
+```
+
+## The Poission Distribution  {.smaller}
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(plotly)
+
+mu_values <- seq(0, 40, by = 1)
+data <- expand.grid(x = 0:25, mu = mu_values)
+data$prob <- dpois(data$x, data$mu)
+
+p <- plot_ly(data, 
+             x = ~x, y = ~prob, frame = ~mu, 
+             type = 'scatter', mode = 'lines',
+             line = list(width = 3, color = '#378DBD')) %>%
+  layout(
+    title = list(text = "Poisson Distribution", font = list(size = 18)),
+    xaxis = list(title = "Count", range = c(0, 25), titlefont = list(size = 16)),
+    yaxis = list(title = "Probability", range = c(0, 0.3), titlefont = list(size = 16)),
+    showlegend = FALSE
+  ) %>%
+  animation_opts(
+    frame = 200,
+    transition = 150,
+    redraw = FALSE
+  ) %>%
+  animation_slider(
+    currentvalue = list(prefix = "Rate Parameter: μ = ", font = list(size = 16, color = "black"))
+  )
+p
+```
+
+## The Poission Distribution  {.smaller}
+
+- As $\mu$ increases, the distribution becomes more symmetric and approaches a normal distribution.
+
+- As $\mu$ increases, the variance increases. A model built from the Poisson Distribution is **heteroskedastic**.
+
+- As $\mu$ decreases, the distribution becomes more right-skewed.
+
+- As $\mu$ decreases, the variance decreases.
+
+## Outline {.smaller}
+
+-   The **Poisson Regression Model** (PRM) is built from the Poisson Distribution. The model allows us to capture the distribution of integer counts, which are typically right skewed.
+
+-   The PRM relies on strong assumption: $E(\mu)=var(y)$. If the data violate this assumption, the variance estimates will be biased, as will test statistics and hypothesis tests.
+
+-   **Overdispersion**. Does the Poisson adequately capture the variance in the data?
+
+-   **Zero Inflation**. Does the Poisson adequately capture the number of zeros in the data?
+-    Key Extensions: Negative binomial and zero-inflated models.
+
+## The Poisson Regression Model  {.smaller}
+
+- Absent covariates, the Poisson distribution is given by
+
+$$p(y|\mu)={{exp(-\mu)\mu^y}\over{y!}}$$
+
+-   If $y$ takes on values from 0, 1, 2, 3, etc. (Long 1997, p. 218)
+-   In this density, the only parameter that governs the shape of the density is $\mu$ or the "rate" parameter
+-   A characteristic of the poisson distribution is that $E(y)=var(y)=\mu$, an assumption called **equidispersion**
+
+## The Poisson regression Model  {.smaller}
+
+-   If $\mu$ is the rate parameter, we can then model $\mu_i$ based on a set of covariates. That is,
+
+$$\mu_i=E(y_i|x_i)=exp(\alpha+\beta x_i)$$
+
+-    $\alpha+\beta x_i$ must be positive; the rate parameter must be positive, hence $exp()$
+
+-   Non-linear regression model with heteroskedasticity (Long 1997, p. 223), $\mu_i=exp(\alpha+\beta x_i)$
+
+-  Note that by extension, the variance is also influenced by covariate(s), $x_i$.
+
+## A Motivating Example  {.smaller}
+
+-   Assume $\alpha=-0.25$, and $\beta=0.13$ as Long does (p. 221). We may calculate the expected values of $y$ for a number of $x$ values, then
+
+-   When $x=1$, then the expected number of counts -- the rate parameter -- is 0.89 (exp(-0.25 + 0.13\* 1))
+
+-   When $x=10$ then the expected number of counts is 2.85 
+
+-    $E(y|x)=exp(\alpha+\beta x_i)=var(y|x)$
+
+## Predicted Probabilities from the Model {.smaller}
+
+- Assume that `mu <- exp(-0.25 + 0.13*1)`
+
+- Then, what is the probability of observing 0, 1, or 2 counts when $x=1$?
+
+```{r}
+#| echo: true
+#| warning: false
+#| message: false
+
+mu <- exp(-0.25 + 0.13*1) 
+
+(exp(-mu) * mu^0) / factorial(0)
+
+(exp(-mu) * mu^1) / factorial(1)
+
+(exp(-mu) * mu^2) / factorial(2)
+
+dpois(0:2, lambda = mu)
+```
+
+
+## The Poisson Regression Model  {.smaller}
+
+-   With $k$ predictors, then
+
+$$\mu_i=exp(\alpha+\sum_K \beta_k x_{k,i})$$
+
+$$p(y|x)={{exp(-exp(\alpha+\sum_K \beta_k x_{k,i}))exp(\alpha+\sum_K \beta_k x_{k,i})^{y_i}}\over{y_i!}}$$
+- The Likelihood of the PRM with $k$ predictors:
+
+$$\prod_{i=1}^{N}p(y_i|\mu_i)=\prod_{i=1}^{N}{{exp(-exp(\alpha+\sum_K \beta_k x_{k,i}))exp(\alpha+\sum_K \beta_k x_{k,i})^{y_i}}\over{y_i!}}$$
+
+## The PRM Likelihood  {.smaller}
+
+The log of the likelihood is then,
+
+$$\log\left(\prod_{i=1}^{N}p(y_i|\mu_i)\right) = \sum_{i=1}^{N}\log\left(\frac{\exp\left(-\exp\left(\alpha + \sum_{k=1}^{K} \beta_k x_{k,i}\right)\right) \left[\exp\left(\alpha + \sum_{k=1}^{K} \beta_k x_{k,i}\right)\right]^{y_i}}{y_i!}\right)$$
+$$E(y|x)=\mu_i = exp(\alpha+\sum_K \beta_k x_{k,i})$$
+
+## Interpretation {.smaller}
+
+-   The partial derivative of $E(y|x)$ with respect to $x_k$
+
+-   Using the chain-rule.
+
+$$u=\alpha+\sum_K \beta_k x_{k,i}$$ 
+
+$$
+\frac{\partial y}{\partial x} = \frac{\partial y}{\partial u} \cdot \frac{\partial u}{\partial x}
+$$
+
+## Interpretation {.smaller}
+
+$$
+\frac{\partial y}{\partial x} = \frac{\partial y}{\partial u} \cdot \frac{\partial u}{\partial x}
+$$
+
+$$ {{\partial E(Y|X)}\over{\partial x_k}}={{\partial exp(u)}\over{\partial u}}{{\partial u \beta}\over{\partial x_k}}$$
+
+$$
+exp(\alpha+\sum_K \beta_k x_{k,i})\beta_k=E(Y|X)\beta_k
+$$
+
+-  The effect of $x_k$ on $y$ is now a function of the rate parameter **and** the expected effect of $x_k$ on that rate parameter
+
+- It's not a constant change in the expected count; instead it's a function of how $x_k$ affects the rate as well as how all others relate to the rate!
+
+## Interpretation: Change in $x$  {.smaller}
+
+-   What effect does a $d_k$ change in $x_k$ have on the expected count. Take the ratio of the the prediction including the change over the prediction absent the change (Long 1997, p. 225):
+
+$$ {{E(y|X, x_k+d_k)}\over{E(y|X, x_k)}}$$
+
+-   The numerator: 
+$$ 
+E(y|X, x_k+d_k)=exp(\beta_0)exp(\beta_1 x_1)exp(\beta_2 x_2)...exp(\beta_1 x_k)exp(\beta_k d_k) 
+$$
+
+-   The denominator: 
+$$
+E(y|X, x_k)=exp(\beta_0)exp(\beta_1 x_1)exp(\beta_2 x_2)...exp(\beta_1 x_k)
+$$
+
+-  We're left with:  
+
+$$ 
+exp(\beta_k d_k)
+$$
+
+## Interpretation: Probabilities {.smaller}
+
+-  The predicted probability of a count
+
+$$
+pr(y=m|x)={{exp(-exp(\alpha+\sum_K \beta_k x_{k,i}))exp(\alpha+\sum_K \beta_k x_{k,i})^{m}}\over{m!}}
+$$
+
+- The partial derivative
+
+$$ exp(\alpha+\sum_K \beta_k x_{k,i})\beta_k=E(Y|X)\beta_k$$
+
+## Summary   {.smaller}
+
+- If $y \sim Poisson(\mu)$, then $E(y)=var(y)=\mu$
+
+- $log(\mu)=\alpha+\sum_K \beta_k x_{k,i}$
+
+-    We might encounter either under or overdispersion brought about by unobserved heterogeneity.
+
+-   It is useful to rely on an alternative model that doesn't treat $\mu$ as fixed, but rather it is drawn from a distribution, i.e., $$\mu_i=exp(\alpha+\sum_K \beta_k x_{k,i})\beta_k+\epsilon_i)$$
+
+
+## Poisson Regression: Application  {.smaller}
+
+- Scholarly publications of biochemistry graduate students.
+
+- From Long (1997), data consist of 915 biochemistry graduate students and the following observations.
+
+- The data are in `pscl::bioChemists`
+
+- `art`: Number of articles published
+- `phd`: Prestige of PhD granting institution 
+- `fem`: Whether the student identifies as "Male" or "Female"
+- `mar`: Marital status of the student
+- `kid5`: Number of children under age 5.
+- `ment`: Number of articles published by the mentor during past 3 years.
+
+- We can fit the data using `glm(formula, data, family=poisson(link="log"))`
+
+- Use `pois` family for post-estimation, along with `predict`
+
+- Follow the same workflow: Estimation $\rightarrow$ Prediction $\rightarrow$ (Graphical) Presentation.
+
+## Poisson Regression: Application  {.smaller}
+
+$$
+y_{articles} = \beta_0 + \beta_1 x_{kid5} + 
+                \beta_2 x_{fem} + \beta_3 x_{mar} + 
+                \beta_4 x_{phd} + \beta_5 x_{ment} + 
+                \epsilon
+$$
+
+```{r}
+#| echo: true
+#| warning: false
+#| message: false
+
+library(pscl)
+data(bioChemists)
+bioChemists$fem<-as.numeric(bioChemists$fem)-1
+bioChemists$mar<-as.numeric(bioChemists$mar)-1
+summary(glm(art~kid5 + fem + mar + phd + ment , 
+            data=bioChemists,
+            family=poisson(link="log")))
+```
+
+
+## Poisson Regression: Application  {.smaller}
+
+$$
+y_{articles} = \beta_0 + \beta_1 x_{kid5} + 
+                \beta_2 x_{fem} + \beta_3 x_{mar} + 
+                \beta_4 x_{phd} + \beta_5 x_{ment} + 
+                \epsilon
+$$
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(pscl)
+data(bioChemists)
+bioChemists$fem<-as.numeric(bioChemists$fem)-1
+bioChemists$mar<-as.numeric(bioChemists$mar)-1
+my_model = glm(art~kid5 + fem + mar + phd + ment , 
+            data=bioChemists,
+            family=poisson(link="log"))
+```
+
+## Generate Expected Counts  {.smaller}
+
+```{r}
+#| echo: true
+#| warning: false
+#| message: false
+
+library(tidyverse)
+design_matrix <- expand.grid(
+  intercept = 1,
+  fem = 1,
+  mar = 1,
+  kid5 = 0,
+  phd = mean(bioChemists$phd),
+  ment = mean(bioChemists$ment)
+) 
+
+cat("The expected number of articles published, assuming the above  covariate values:\n",
+   as.matrix(design_matrix) %*%  coef(my_model) |> exp() |> as.numeric(),
+   "\narticles"
+    )
+
+```
+
+## Generate Expected Counts  {.smaller}
+
+```{r}
+#| echo: true
+#| warning: false
+#| message: false
+library(tidyverse)
+design_matrix <- expand.grid(
+  intercept = 1,
+  fem = 0,
+  mar = 1,
+  kid5 = 1,
+  phd = mean(bioChemists$phd),
+  ment = mean(bioChemists$ment)
+) 
+
+cat("The expected number of articles published, assuming the abovecovariate values:\n",
+   as.matrix(design_matrix) %*%  coef(my_model) |> exp() |> as.numeric(),
+   "\narticles"
+    )
+
+```
+
+## Simulate Uncertainty {.smaller}
+
+```{r}
+#| echo: true
+#| warning: false
+#| message: false
+#| 
+library(dplyr)
+
+library(tidyverse)
+design_matrix <- expand.grid(
+  intercept = 1,
+  fem = 0,
+  mar = 1,
+  kid5 = 2,
+  phd = mean(bioChemists$phd),
+  ment = mean(bioChemists$ment)
+) 
+
+parameter_draws = MASS::mvrnorm(1000, mu = coef(my_model), Sigma = vcov(my_model))
+sampled_values = as.matrix(design_matrix) %*%  t(parameter_draws) |> exp() |> t() |> as.tibble()
+
+sampled_values |>
+  summarize(
+    mean = mean(V1),
+    lower = quantile(V1, 0.025),
+    upper = quantile(V1, 0.975)
+  )
+```
+
+
+## Simulate Uncertainty {.smaller}
+
+- And varying multiple variables simultaneously, predicting what happens in different combinations of covariate values.
+
+- Note that the code is identical, the exception being `bind_cols`. This is just to label the prediction groups in the final output.
+
+```{r}
+#| echo: true
+#| warning: false
+#| message: false
+
+library(tidyverse)
+design_matrix <- expand.grid(
+  intercept = 1,
+  fem = c(0,1),
+  mar = c(0,1),
+  kid5 = c(0,1,2),
+  phd = mean(bioChemists$phd),
+  ment = mean(bioChemists$ment)
+) 
+
+parameter_draws = MASS::mvrnorm(1000, mu = coef(my_model), Sigma = vcov(my_model))
+sampled_values = as.matrix(design_matrix) %*%  t(parameter_draws) |> exp() |> as_tibble()
+
+sampled_values_with_groups <- bind_cols(
+  design_matrix |> select(fem, mar, kid5), 
+  sampled_values
+)
+
+sampled_values_with_groups |>
+  pivot_longer(cols = starts_with("V"), names_to = "draw", values_to = "predicted") |>
+  group_by(fem, mar, kid5) |>
+  summarize(
+    mean = mean(predicted),
+    lower = quantile(predicted, 0.025),
+    upper = quantile(predicted, 0.975),
+    .groups = "drop"
+  )
+```
+## Generating predictions {.smaller}
+
+- Use the Poisson CDF in `R` to generate predicted probabilities of counts.
+
+- We can use the same code, just change `exp()` to `ppois()`
+
+## The Negative Binomial Regression Model  {.smaller}
+
+-   The NBRM stems from the negative binomial distribution
+
+-   Recall the binomial density is the PDF stemming from $k$ independent bernoulli trials. The $\theta$ parameter will govern its shape.
+
+-    We can modify the logic (and code) slightly to generate a probability of observing $r$ successes, given $n$ trials.
+
+```{r}
+#| echo: true
+#| warning: false
+#| message: false
+
+library(tidyverse)
+design_matrix <- expand.grid(
+  intercept = 1,
+  fem = c(0,1),
+  mar = c(0,1),
+  kid5 = c(0,1,2),
+  phd = mean(bioChemists$phd),
+  ment = mean(bioChemists$ment)
+) 
+
+parameter_draws = MASS::mvrnorm(1000, mu = coef(my_model), Sigma = vcov(my_model))
+sampled_values = as.matrix(design_matrix) %*%  t(parameter_draws) |> exp() |> ppois(2) |> as_tibble()
+
+sampled_values_groups <- bind_cols(
+  design_matrix |> select(fem, mar, kid5), 
+  sampled_values
+)
+
+sampled_values_groups |>
+  pivot_longer(cols = starts_with("V"), names_to = "draw", values_to = "predicted") |>
+  group_by(fem, mar, kid5) |>
+  summarize(
+    mean = mean(predicted),
+    lower = quantile(predicted, 0.025),
+    upper = quantile(predicted, 0.975),
+    .groups = "drop"
+  )
+```
+## The Negative Binomial Regresion {.smaller}
+
+- In **negative binomial regression**, count data are modeled with overdispersion:
+
+- **Mean**: $\mu = \exp(X\beta)$ 
+- **Variance**: $\mu + \frac{\mu^2}{\theta}$ (larger than Poisson's $\mu$)
+
+- `glm(formula, data = data, family = quasipoisson(link = "log"))`
+
+## The Negative Binomial Regresion {.smaller}
+
+```{r}
+#| echo: true
+
+glm(art~kid5 + fem + mar + phd + ment , 
+            data=bioChemists,
+            family=quasipoisson(link="log")) |>
+  summary()
+
+```
+
+## Capturing Dispersion  {.smaller}
+
+-  If we have overdispersion ($E(y)<var(y)$) then standard errors will be too small and we will be too over confident in our results.
+- Instead, let's assume that the rate parameter is subject to error.
+- That is, it follows some distribution. We'll use Gamma.
+- The Negative Binomial Distribution is a mixture between a Poisson and a Gamma distribution.
+
+
+## Capturing Dispersion: The Gamma-Poisson Mixture  {.smaller}
+
+**The Problem**: If we have overdispersion ($E(y) < \text{Var}(y)$), standard errors will be too small and we will express too much confidence in our results.
+
+- The **Negative Binomial**: $\text{Var}(Y_i) = \mu_i + \frac{\mu_i^2}{\theta}$ (variance > mean)
+
+- $\theta$ = **dispersion parameter** 
+- As $\theta \to \infty$: variance approaches Poisson.
+- As $\theta \to 0$: high overdispersion.
+
+$$
+\lambda_i \sim \text{Gamma}(\text{shape}=\theta, \text{rate}=\frac{\theta}{\mu_i})
+$$
+-  Given this updated rate, then $Y_i$ just follows the Poisson.
+
+$$Y_i|\lambda_i \sim \text{Poisson}(\lambda_i \cdot e_i)$$
+$$\mu_i=exp(\alpha+\sum_K \beta_k x_{k,i})$$
+
+## Application: Negative Binomial Regression {.smaller}
+
+- The coefficients are the same as the Poisson regression.
+
+- The general approach to extract meaningful estimates is also the same.
+
+- The only difference is that we use `family=quasipoisson(link="log")` in `glm()`
+
+- And estimate a $\theta$ parameter that captures overdispersion.
+
+- The standard errors change.
+
+## {.smaller}
+
+**Poisson Regression Model**
+
+```{r}
+#| echo: true
+#| warning: false
+#| message: false
+
+library(pscl)
+data(bioChemists)
+bioChemists$fem<-as.numeric(bioChemists$fem)-1
+bioChemists$mar<-as.numeric(bioChemists$mar)-1
+my_model = glm(art~kid5 + fem + mar + phd + ment , 
+            data=bioChemists,
+            family=poisson(link="log"))
+summary(my_model)
+```
+
+## {.smaller}
+
+**Negative Binomial Regression Model**
+
+```{r}
+#| echo: true
+#| warning: false
+#| message: false
+
+library(pscl)
+data(bioChemists)
+bioChemists$fem<-as.numeric(bioChemists$fem)-1
+bioChemists$mar<-as.numeric(bioChemists$mar)-1
+my_model = glm(art~kid5 + fem + mar + phd + ment , 
+            data=bioChemists,
+            family=quasipoisson(link="log"))
+summary(my_model)
+```
+
